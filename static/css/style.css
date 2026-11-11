@@ -350,6 +350,39 @@ tr:not(.is-expanded) .notes { padding: 6px 10px; }
 .trash:hover .trash-lid { transform: translateY(-2px) rotate(18deg); }
 .trash:focus-visible { outline: 3px solid #d9534f; outline-offset: 2px; }
 
+/* Clear-all trash in the header: always visible */
+.plan th .trash--all {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  opacity: 1;
+  visibility: visible;
+  color: var(--title-green);
+}
+.plan th .trash--all:hover { color: #d9534f; }
+.plan th .trash--all.is-armed,
+.plan th .trash--all.is-armed:hover {
+  background: #d9534f;
+  color: #fff;
+}
+.trash--all.is-armed svg { animation: wiggle .45s ease-in-out infinite; }
+.clear-confirm {
+  position: absolute;
+  right: calc(100% + 6px);
+  top: 50%;
+  translate: 0 -50%;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #d9534f;
+  color: #fff;
+  font: 600 .8rem "Fredoka", sans-serif;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .15s ease;
+}
+.trash--all.is-armed .clear-confirm { opacity: 1; }
+
 /* Row being deleted collapses away */
 tr.is-removing .cell {
   height: 0;

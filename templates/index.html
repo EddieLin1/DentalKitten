@@ -24,7 +24,18 @@
             <th>Kittens</th>
             {% for _ in range(date_columns) %}<th>PLACEHOLDER</th>{% endfor %}
             <th class="notes-col">Notes</th>
-            <th class="trash-col"><span class="visually-hidden">Delete</span></th>
+            <th class="trash-col">
+              <button class="trash trash--all" id="clear-all" type="button"
+                      aria-label="Clear all kittens" title="Clear all kittens">
+                <span class="clear-confirm" aria-hidden="true">Clear all?</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <g class="trash-lid"><path d="M4 7h16"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></g>
+                  <path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/>
+                  <path d="M10 11v6M14 11v6"/>
+                </svg>
+              </button>
+            </th>
           </tr>
         </thead>
         <tbody id="kitten-rows"></tbody>
@@ -54,6 +65,6 @@
     }, 350);
   });
 </script>
-<script src="{{ url_for('static', filename='js/meow.js') }}"></script>
+<script src="{{ url_for('static', filename='js/sounds.js') }}"></script>
 <script src="{{ url_for('static', filename='js/kittens.js') }}"></script>
 {% endblock %}

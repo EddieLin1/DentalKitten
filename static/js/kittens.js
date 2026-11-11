@@ -119,6 +119,7 @@ function createRow({ kitten, sleep, delay, expanded = false, dates = [], notes =
 }
 
 document.getElementById("add-kitten").addEventListener("click", () => {
+  playRandomMeow();
   createRow({
     kitten: KITTENS.indexOf(nextKitten()),
     // Each kitten gets its own breathing speed and start offset
@@ -133,6 +134,7 @@ tbody.addEventListener("click", (e) => {
   const trash = e.target.closest(".trash");
   if (trash) {
     const tr = trash.closest("tr");
+    playTrashSound();
     tr.classList.add("is-removing");
     setTimeout(() => { tr.remove(); saveRows(); }, 350);
     return;
@@ -145,6 +147,34 @@ tbody.addEventListener("click", (e) => {
   const open = kitten.closest("tr").classList.toggle("is-expanded");
   kitten.setAttribute("aria-expanded", open);
   saveRows();
+});
+
+// Clear-all trash in the header. First click arms it ("Clear all?"),
+// a second click within 3 seconds clears every row.
+const clearAll = document.getElementById("clear-all");
+let disarmTimer;
+
+function disarmClearAll() {
+  clearTimeout(disarmTimer);
+  clearAll.classList.remove("is-armed");
+  clearAll.setAttribute("aria-label", "Clear all kittens");
+}
+
+clearAll.addEventListener("click", () => {
+  const rows = tbody.querySelectorAll("tr:not(.is-removing)");
+  if (!rows.length) return;
+
+  if (!clearAll.classList.contains("is-armed")) {
+    clearAll.classList.add("is-armed");
+    clearAll.setAttribute("aria-label", "Click again to clear all kittens");
+    disarmTimer = setTimeout(disarmClearAll, 3000);
+    return;
+  }
+
+  disarmClearAll();
+  playTrashSound();
+  rows.forEach((tr) => tr.classList.add("is-removing"));
+  setTimeout(() => { rows.forEach((tr) => tr.remove()); saveRows(); }, 350);
 });
 
 // Notes save as you type

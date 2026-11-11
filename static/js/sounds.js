@@ -1,4 +1,5 @@
-// ---------- Meows, synthesised with the Web Audio API (no audio files) ----------
+// ---------- Sounds, synthesised with the Web Audio API (no audio files) ----------
+// Kitten mews (20 presets) plus the trash "crumple + clunk" for deleting.
 // Each mew is a pitch contour (start → peak → end) shaped by a "mouth" filter that
 // sweeps m → ee → oo ("mew"). Extra knobs: vibrato (vib/vibDepth) and purr-like trill.
 // Kitten mews are high, short and soft, so pitches are ~800–1800 Hz and under ~0.5s.
@@ -117,4 +118,61 @@ function playRandomMeow() {
   do { i = Math.floor(Math.random() * MEOWS.length); } while (i === lastMeow);
   lastMeow = i;
   playMeow(MEOWS[i]);
+}
+
+// ---------- Trash sound: paper crumple, then a lid clunk ----------
+function crumpleBuffer(ac, dur) {
+  const len = Math.floor(ac.sampleRate * dur);
+  const buf = ac.createBuffer(1, len, ac.sampleRate);
+  const data = buf.getChannelData(0);
+  let env = 0;
+  for (let i = 0; i < len; i++) {
+    if (Math.random() < 0.0025) env = 0.4 + Math.random() * 0.6;   // a new crackle
+    env *= 0.9975;                                                  // each crackle dies fast
+    data[i] = (Math.random() * 2 - 1) * env;
+  }
+  return buf;
+}
+
+function playTrashSound() {
+  audio ??= new (window.AudioContext || window.webkitAudioContext)();
+  if (audio.state === "suspended") audio.resume();
+  const t = audio.currentTime + 0.01;
+
+  // 1. Crumple
+  const crumple = audio.createBufferSource();
+  crumple.buffer = crumpleBuffer(audio, 0.28);
+  const rustle = audio.createBiquadFilter();
+  rustle.type = "bandpass";
+  rustle.frequency.value = 2200;
+  rustle.Q.value = 0.7;
+  const cg = audio.createGain();
+  cg.gain.setValueAtTime(0.7, t);
+  cg.gain.linearRampToValueAtTime(0.0001, t + 0.28);
+  crumple.connect(rustle).connect(cg).connect(audio.destination);
+  crumple.start(t);
+
+  // 2. Lid clunk: a low thud plus a short metal ping
+  const tc = t + 0.24;
+  const thud = audio.createOscillator();
+  thud.frequency.setValueAtTime(160, tc);
+  thud.frequency.exponentialRampToValueAtTime(55, tc + 0.15);
+  const tg = audio.createGain();
+  tg.gain.setValueAtTime(0.0001, tc);
+  tg.gain.exponentialRampToValueAtTime(0.35, tc + 0.005);
+  tg.gain.exponentialRampToValueAtTime(0.0001, tc + 0.18);
+  thud.connect(tg).connect(audio.destination);
+  thud.start(tc);
+  thud.stop(tc + 0.2);
+
+  const ping = audio.createOscillator();
+  ping.type = "triangle";
+  ping.frequency.value = 1250;
+  const pg = audio.createGain();
+  pg.gain.setValueAtTime(0.0001, tc);
+  pg.gain.exponentialRampToValueAtTime(0.2, tc + 0.004);
+  pg.gain.exponentialRampToValueAtTime(0.0001, tc + 0.12);
+  ping.connect(pg).connect(audio.destination);
+  ping.start(tc);
+  ping.stop(tc + 0.14);
 }
