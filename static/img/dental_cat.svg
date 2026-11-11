@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 260">
+  <style>
+    .tail  { transform-origin: 160px 224px; animation: wag 2.6s ease-in-out infinite; }
+    .arm   { transform-origin: 162px 158px; animation: brush 1.8s ease-in-out infinite; }
+    .head  { transform-origin: 120px 150px; animation: tilt 5s ease-in-out infinite; }
+    .eyes  { transform-box: fill-box; transform-origin: center; animation: blink 4.8s infinite; }
+    .ear-r { transform-origin: 140px 70px; animation: twitch 6s ease-in-out infinite; }
+
+    @keyframes wag    { 0%,100% { transform: rotate(-6deg); } 50% { transform: rotate(9deg); } }
+    @keyframes brush  { 0%,100% { transform: rotate(-5deg); } 50% { transform: rotate(9deg); } }
+    @keyframes tilt   { 0%,100% { transform: rotate(-2.5deg); } 50% { transform: rotate(2.5deg); } }
+    @keyframes blink  { 0%,92%,100% { transform: scaleY(1); } 95% { transform: scaleY(.1); } }
+    @keyframes twitch { 0%,84%,100% { transform: rotate(0); } 87% { transform: rotate(10deg); } 90% { transform: rotate(-3deg); } 93% { transform: rotate(0); } }
+
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+  </style>
+
+  <g stroke="#5a3b2e" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round">
+
+    <!-- Tail -->
+    <g class="tail">
+      <path d="M158 224 C200 228 214 196 202 170 C194 152 200 136 214 130" fill="none" stroke-width="21"/>
+      <path d="M158 224 C200 228 214 196 202 170 C194 152 200 136 214 130" fill="none" stroke="#f4a04a" stroke-width="14"/>
+      <path d="M201 146 C204 138 208 133 214 130" fill="none" stroke="#fff1df" stroke-width="14"/>
+      <path d="M196 214 l9 6 M206 188 l10 -1" stroke="#e07f2a" stroke-width="4"/>
+    </g>
+
+    <!-- Feet -->
+    <path d="M76 244 C76 232 112 232 112 244 C112 252 76 252 76 244 Z" fill="#f4a04a"/>
+    <path d="M128 244 C128 232 164 232 164 244 C164 252 128 252 128 244 Z" fill="#f4a04a"/>
+    <path d="M88 242 v5 M100 242 v5 M140 242 v5 M152 242 v5" stroke-width="2"/>
+
+    <!-- Scrub pants -->
+    <path d="M82 222 h76 v18 h-76 Z" fill="#8fd0c0"/>
+
+    <!-- Left sleeve + paw -->
+    <path d="M82 152 C66 168 61 190 64 206 C72 211 80 209 85 202 C83 186 86 170 92 160 Z" fill="#ffffff"/>
+
+    <!-- Coat -->
+    <path d="M80 150 C71 176 67 206 69 232 C102 243 138 243 171 232 C173 206 169 176 160 150 C138 141 102 141 80 150 Z" fill="#ffffff"/>
+    <!-- Scrub top V-neck -->
+    <path d="M103 147 L120 176 L137 147 Z" fill="#8fd0c0"/>
+    <!-- Lapels -->
+    <path d="M103 147 C105 164 108 182 112 196 L120 176 Z" fill="#f1f7f5"/>
+    <path d="M137 147 C135 164 132 182 128 196 L120 176 Z" fill="#f1f7f5"/>
+    <circle cx="120" cy="206" r="2.6" fill="#5a3b2e" stroke="none"/>
+    <circle cx="120" cy="220" r="2.6" fill="#5a3b2e" stroke="none"/>
+    <!-- Pocket + tooth -->
+    <path d="M136 196 h26 v16 C162 218 158 220 154 220 h-14 C137 220 136 217 136 214 Z" fill="#f1f7f5"/>
+    <path d="M143 202 C146 199 152 199 155 202 C157 206 155 211 153 214 C152 216 151 214 150 211 C149 209 148 209 147 211 C146 214 145 216 144 214 C142 211 141 206 143 202 Z" fill="#ffffff" stroke-width="2"/>
+    <path d="M141 186 v12" stroke="#6fae6a" stroke-width="5"/>
+
+    <!-- Left paw -->
+    <circle cx="70" cy="208" r="11.5" fill="#f4a04a"/>
+    <path d="M66 214 v3 M73 214 v3" stroke-width="2"/>
+
+    <!-- Right arm holding toothbrush (animated) -->
+    <g class="arm">
+      <g transform="rotate(22 182 172)">
+        <rect x="178" y="110" width="9" height="62" rx="4.5" fill="#6fae6a"/>
+        <rect x="176" y="96" width="13" height="18" rx="4" fill="#ffffff"/>
+        <path d="M176 101 h-7 M176 106 h-7 M176 111 h-7" stroke="#8fd0c0" stroke-width="3.5"/>
+      </g>
+      <path d="M158 152 C174 158 184 168 186 178 C178 184 168 183 160 176 Z" fill="#ffffff"/>
+      <circle cx="181" cy="176" r="11.5" fill="#f4a04a"/>
+    </g>
+
+    <!-- Head (gently tilting) -->
+    <g class="head">
+      <!-- Ears -->
+      <path d="M64 92 C57 64 61 40 73 29 C90 35 104 46 112 57 Z" fill="#f4a04a"/>
+      <path d="M74 74 C72 58 74 47 80 43 C90 47 98 53 102 59 Z" fill="#f7b9b0" stroke="none"/>
+      <g class="ear-r">
+        <path d="M176 92 C183 64 179 40 167 29 C150 35 136 46 128 57 Z" fill="#f4a04a"/>
+        <path d="M166 74 C168 58 166 47 160 43 C150 47 142 53 138 59 Z" fill="#f7b9b0" stroke="none"/>
+      </g>
+
+      <!-- Face -->
+      <path d="M120 46 C162 46 184 72 184 104 C184 138 157 156 120 156 C83 156 56 138 56 104 C56 72 78 46 120 46 Z" fill="#f4a04a"/>
+      <!-- Forehead stripes -->
+      <path d="M109 50 C111 56 111 62 109 67 M120 48 V67 M131 50 C129 56 129 62 131 67" stroke="#e07f2a" stroke-width="4.5"/>
+      <!-- Cheek tufts -->
+      <path d="M57 112 l-7 4 l8 3 M183 112 l7 4 l-8 3" fill="#f4a04a" stroke-width="3"/>
+
+      <!-- Eyebrows -->
+      <path d="M88 75 C93 71 100 71 105 74 M135 74 C140 71 147 71 152 75" fill="none" stroke-width="3"/>
+      <!-- Eyes (blinking) -->
+      <g class="eyes">
+        <ellipse cx="97" cy="91" rx="8.5" ry="10.5" fill="#3a2a22" stroke="none"/>
+        <ellipse cx="143" cy="91" rx="8.5" ry="10.5" fill="#3a2a22" stroke="none"/>
+        <circle cx="100" cy="87" r="3.2" fill="#ffffff" stroke="none"/>
+        <circle cx="146" cy="87" r="3.2" fill="#ffffff" stroke="none"/>
+        <circle cx="94" cy="95" r="1.5" fill="#ffffff" stroke="none"/>
+        <circle cx="140" cy="95" r="1.5" fill="#ffffff" stroke="none"/>
+      </g>
+      <!-- Blush -->
+      <ellipse cx="72" cy="117" rx="7.5" ry="5" fill="#f27c7c" opacity=".4" stroke="none"/>
+      <ellipse cx="168" cy="117" rx="7.5" ry="5" fill="#f27c7c" opacity=".4" stroke="none"/>
+
+      <!-- Respirator straps wrapping around to the back of the head -->
+      <path d="M84 110 C74 105 64 102 57 101 M85 140 C76 136 68 131 61 127
+               M156 110 C166 105 176 102 183 101 M155 140 C164 136 172 131 179 127"
+            fill="none" stroke-width="7"/>
+      <path d="M84 110 C74 105 64 102 57 101 M85 140 C76 136 68 131 61 127
+               M156 110 C166 105 176 102 183 101 M155 140 C164 136 172 131 179 127"
+            fill="none" stroke="#6fa8c8" stroke-width="3.5"/>
+
+      <!-- Whiskers: three per side, tucked under the mask edge -->
+      <path d="M90 118 C76 115 64 113 50 113 M90 127 C76 127 62 128 48 130 M90 136 C78 138 66 142 54 148
+               M150 118 C164 115 176 113 190 113 M150 127 C164 127 178 128 192 130 M150 136 C162 138 174 142 186 148"
+            fill="none" stroke-width="2.2"/>
+
+      <!-- N95-style cup respirator -->
+      <path d="M80 118 C83 107 103 103 120 103 C137 103 157 107 160 118 C164 137 146 155 120 155 C94 155 76 137 80 118 Z" fill="#f8f8f3"/>
+      <!-- Dome shading -->
+      <path d="M126 106 C146 108 156 118 155 130 C153 143 141 151 126 153 C138 143 141 122 126 106 Z" fill="#e4e6df" stroke="none"/>
+      <!-- Center seam -->
+      <path d="M120 104 C123 120 123 138 120 154" fill="none" stroke="#c9cdc4" stroke-width="2.5"/>
+      <!-- Nose clip -->
+      <path d="M106 108 C113 105 127 105 134 108" fill="none" stroke="#9aa6ad" stroke-width="4"/>
+      <!-- Rim -->
+      <path d="M80 118 C83 107 103 103 120 103 C137 103 157 107 160 118 C164 137 146 155 120 155 C94 155 76 137 80 118 Z" fill="none"/>
+    </g>
+  </g>
+</svg>

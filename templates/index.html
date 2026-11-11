@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="welcome" id="heading">Welcome!</h1>
+
+<div class="badge">
+  <span class="sparkle sparkle--one" aria-hidden="true">✦</span>
+  <span class="sparkle sparkle--two" aria-hidden="true">✧</span>
+  <span class="sparkle sparkle--three" aria-hidden="true">✦</span>
+
+  <img class="cat" src="{{ url_for('static', filename='img/dental_cat.svg') }}"
+       alt="An orange cat wearing a dental uniform" draggable="false">
+  <div class="cat-shadow" aria-hidden="true"></div>
+
+  <p class="badge__title">Dental Kitten</p>
+</div>
+
+<div class="plan-wrap" id="plan">
+  <div class="plan-inner">
+    <div class="plan-scroll">
+      <table class="plan" data-date-columns="{{ date_columns }}">
+        <thead>
+          <tr>
+            <th>Kittens</th>
+            {% for _ in range(date_columns) %}<th>PLACEHOLDER</th>{% endfor %}
+            <th class="notes-col">Notes</th>
+            <th class="trash-col"><span class="visually-hidden">Delete</span></th>
+          </tr>
+        </thead>
+        <tbody id="kitten-rows"></tbody>
+      </table>
+    </div>
+    <button class="add-btn" id="add-kitten" type="button" aria-label="Add a kitten">+</button>
+  </div>
+</div>
+
+<button class="btn" id="plan-toggle" type="button" aria-expanded="false" aria-controls="plan">Plan</button>
+
+<script>
+  const toggle = document.getElementById("plan-toggle");
+  const heading = document.getElementById("heading");
+  let swap;
+  toggle.addEventListener("click", () => {
+    const open = document.body.classList.toggle("is-planning");
+    toggle.setAttribute("aria-expanded", open);
+    toggle.textContent = open ? "Back" : "Plan";
+
+    // Fade the heading out, swap the text, fade back in (matches the .7s shrink)
+    clearTimeout(swap);
+    heading.classList.add("is-fading");
+    swap = setTimeout(() => {
+      heading.textContent = open ? "Plan your day!" : "Welcome!";
+      heading.classList.remove("is-fading");
+    }, 350);
+  });
+</script>
+<script src="{{ url_for('static', filename='js/meow.js') }}"></script>
+<script src="{{ url_for('static', filename='js/kittens.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,410 @@
+/* ---------- Theme ---------- */
+:root {
+  --bg: #eef1ec;
+  --circle-fill: #cfe5cb;
+  --circle-ring: #8cc286;
+  --green: #74b16e;
+  --green-dark: #5c9a57;
+  --title-green: #4f7f4b;
+  --ink: #1f1f1f;
+  --card: #ffffff;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Fredoka", system-ui, sans-serif;
+}
+
+/* Non-interactive text & images can't be highlighted, dragged or long-pressed.
+   Kept off the notes/date inputs, since iPad Safari won't let you type in
+   fields that sit inside a user-select:none area. */
+.welcome, .badge, .badge *, .btn, .add-btn, .kitten, .trash, .plan th {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;   /* no iOS "Save Image / Copy" pop-up */
+  -webkit-tap-highlight-color: transparent;
+}
+img, svg { -webkit-user-drag: none; }
+.welcome, .badge { cursor: default; }   /* arrow, not a text cursor */
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 32px 16px;
+}
+
+.welcome {
+  margin: 0;
+  font-size: clamp(1.8rem, 5vw, 2.4rem);
+  font-weight: 700;
+  transition: opacity .35s ease;
+}
+.welcome.is-fading { opacity: 0; }
+
+/* ---------- Circular badge ---------- */
+.badge {
+  position: relative;
+  width: min(340px, 85vw);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--circle-fill);
+  border: 6px solid var(--bg);
+  box-shadow: 0 0 0 5px var(--circle-ring);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  container-type: inline-size;   /* lets the contents scale with the badge */
+  transition: width .7s cubic-bezier(.65, 0, .35, 1);
+}
+.is-planning .badge { width: 150px; }
+
+.cat {
+  width: 70%;
+  animation: float 3.4s cubic-bezier(.45, 0, .55, 1) infinite;
+  position: relative;
+  z-index: 1;
+}
+
+.cat-shadow {
+  width: 34%;
+  height: 3cqw;
+  margin-top: .6cqw;
+  border-radius: 50%;
+  background: rgba(60, 100, 55, 0.25);
+  animation: shadow 3.4s cubic-bezier(.45, 0, .55, 1) infinite;
+}
+
+.badge__title {
+  margin: -1.8cqw 0 0;
+  font-size: 8.5cqw;
+  font-weight: 700;
+  color: var(--title-green);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.sparkle {
+  position: absolute;
+  color: var(--title-green);
+  animation: twinkle 2.4s ease-in-out infinite;
+}
+.sparkle--one   { top: 30%; left: 12%; font-size: 7cqw; }
+.sparkle--two   { top: 40%; left: 20%; font-size: 5cqw; animation-delay: .8s; }
+.sparkle--three { top: 26%; right: 13%; font-size: 5.5cqw; animation-delay: 1.4s; }
+
+/* ---------- Button ---------- */
+.btn {
+  display: inline-block;
+  min-width: 120px;
+  padding: 10px 32px;
+  border-radius: 999px;
+  background: var(--green);
+  color: var(--ink);
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+  font-family: inherit;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 3px 0 var(--green-dark);
+  transition: transform .15s ease, background .15s ease, box-shadow .15s ease;
+}
+.btn:hover  { background: #82bd7c; transform: translateY(-2px); box-shadow: 0 5px 0 var(--green-dark); }
+.btn:active { transform: translateY(1px); box-shadow: 0 2px 0 var(--green-dark); }
+.btn:focus-visible { outline: 3px solid var(--title-green); outline-offset: 3px; }
+
+/* ---------- Plan table (revealed in place) ---------- */
+.plan-wrap {
+  display: grid;
+  grid-template-rows: 0fr;          /* collapsed: takes no height */
+  width: min(1100px, 100%);
+  margin: -12px 0;                  /* cancel the page gap while hidden */
+  transition: grid-template-rows .7s cubic-bezier(.65, 0, .35, 1), margin .7s;
+}
+.plan-inner {
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity .4s ease, transform .4s ease;
+}
+.is-planning .plan-wrap  { grid-template-rows: 1fr; margin: 0; }
+.is-planning .plan-inner { opacity: 1; transform: none; transition-delay: .35s; }
+
+.plan-scroll {
+  overflow-x: auto;
+  background: var(--card);
+  border: 3px solid var(--circle-fill);
+  border-radius: 18px;
+}
+.plan {
+  width: 100%;
+  min-width: 940px;
+  border-collapse: collapse;
+  text-align: left;
+}
+.plan th {
+  padding: 12px;
+  background: var(--circle-fill);
+  color: var(--title-green);
+  font-weight: 700;
+  font-size: .9rem;
+  letter-spacing: .03em;
+  white-space: nowrap;
+  user-select: none;   /* header text can't be highlighted */
+  cursor: default;     /* no text cursor on hover */
+}
+.plan th:first-child { font-size: 1.1rem; }
+.plan .notes-col { width: 26%; }
+.plan td {
+  padding: 0 12px;
+  border-top: 2px solid var(--bg);
+}
+
+/* Each cell's height animates when its row expands */
+.cell {
+  height: 46px;                     /* minimized (kitten asleep) */
+  display: flex;
+  align-items: center;
+  transition: height .35s cubic-bezier(.65, 0, .35, 1);
+}
+.is-expanded .cell { height: 160px; }
+.cell--notes { align-items: stretch; padding: 4px 0; }
+.is-expanded .cell--notes { padding: 8px 0; }
+
+/* Kitten avatar */
+.kitten {
+  --scale: .85;
+  position: relative;
+  width: 46px;
+  height: 46px;
+  padding: 4px;
+  border: none;
+  border-radius: 50%;
+  background: var(--kitten-bg);
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, .06);
+  cursor: pointer;
+  transform: scale(var(--scale));
+  transition: transform .25s ease;
+}
+.kitten:hover { --scale: .92; }
+.is-expanded .kitten { --scale: 1.3; }
+.is-expanded .kitten:hover { --scale: 1.36; }
+.kitten svg { display: block; width: 100%; height: 100%; }
+.kitten:focus-visible { outline: 3px solid var(--title-green); outline-offset: 2px; }
+
+/* Asleep (minimized) vs awake (expanded).
+   --sleep / --delay are randomised per kitten so they all breathe out of sync. */
+.kitten .eyes-open                  { display: none; }
+.is-expanded .kitten .eyes-open     { display: inline; }
+.is-expanded .kitten .eyes-closed,
+.is-expanded .kitten .bubble,
+.is-expanded .kitten .zzz           { display: none; }
+
+.kitten svg {
+  animation: breathe var(--sleep) ease-in-out var(--delay) infinite;
+}
+.is-expanded .kitten svg { animation: none; }
+
+.kitten .bubble {
+  transform-box: fill-box;
+  transform-origin: 0% 50%;
+  animation: bubble var(--sleep) ease-in-out var(--delay) infinite;
+}
+
+.zzz {
+  position: absolute;
+  top: 10px;          /* starts right by the kitten's head */
+  right: 8px;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.zzz i {
+  position: absolute;
+  font-family: "Fredoka", sans-serif;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--green-dark);
+  opacity: 0;
+  animation: zfloat calc(var(--sleep) * 1.2) linear infinite;
+}
+/* All three Z's start at the same spot and drift out one after another */
+.zzz i {
+  left: 0;
+  top: 0;
+  font-size: 16px;
+  transform-origin: left bottom;
+}
+.zzz i:nth-child(1) { animation-delay: var(--delay); }
+.zzz i:nth-child(2) { animation-delay: calc(var(--delay) + var(--sleep) * .4); }
+.zzz i:nth-child(3) { animation-delay: calc(var(--delay) + var(--sleep) * .8); }
+
+/* Add-kitten button */
+.add-btn {
+  display: block;
+  width: 40px;
+  height: 40px;
+  margin: 12px 0 6px 18px;   /* sits under the table, lined up with the kittens */
+  border: none;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 3px 0 var(--green-dark);
+  color: var(--ink);
+  font: 700 1.6rem/1 "Fredoka", sans-serif;
+  cursor: pointer;
+  transition: transform .15s ease, background .15s ease;
+}
+.add-btn:hover  { background: #82bd7c; transform: translateY(-2px); }
+.add-btn:active { transform: translateY(1px); }
+
+/* Dates: faint MM/DD/YY with darker slashes */
+.date {
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-weight: 600;
+  letter-spacing: .05em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+/* Dates and trash hide while the row is minimized, and fade in once it has expanded */
+.date, .date-input, .trash {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .2s ease, visibility 0s .2s;
+}
+.is-expanded .date, .is-expanded .date-input, .is-expanded .trash {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity .3s ease .2s, visibility 0s .2s;
+}
+.date.is-empty { color: #cdd6ca; }
+.date .slash   { color: #7f927b; }
+.date:hover    { background: #f3f7f2; }
+.date-input {
+  width: 92px;
+  padding: 4px 8px;
+  border: 2px solid var(--circle-ring);
+  border-radius: 8px;
+  font: 600 1rem "Fredoka", sans-serif;
+  letter-spacing: .05em;
+  outline: none;
+}
+
+/* Notes */
+.notes {
+  width: 100%;
+  resize: none;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  font: 500 .95rem/1.4 "Fredoka", sans-serif;
+  color: var(--ink);
+}
+tr:not(.is-expanded) .notes { padding: 6px 10px; }
+.notes::placeholder { color: #cdd6ca; }
+.notes:hover { background: #f6f9f5; }
+.notes[readonly] {
+  cursor: default;
+  user-select: none;     /* double-click opens editing instead of selecting a word */
+  touch-action: manipulation;
+}
+.notes[readonly]:focus { outline: none; }
+.notes:not([readonly]):focus { outline: 2px solid var(--circle-ring); background: #f9fbf8; }
+
+/* Trash button (right end of an expanded row) */
+.trash-col { width: 56px; }
+.trash {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #b08a80;
+  cursor: pointer;
+}
+.trash svg { width: 22px; height: 22px; overflow: visible; }
+.trash-lid {
+  transform-box: fill-box;
+  transform-origin: right bottom;
+  transition: transform .2s ease;
+}
+.trash:hover { background: #fde4e0; color: #d9534f; }
+.trash:hover svg { animation: wiggle .45s ease-in-out; }
+.trash:hover .trash-lid { transform: translateY(-2px) rotate(18deg); }
+.trash:focus-visible { outline: 3px solid #d9534f; outline-offset: 2px; }
+
+/* Row being deleted collapses away */
+tr.is-removing .cell {
+  height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: height .35s ease, opacity .2s ease;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------- Animations ---------- */
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0); }
+  25%      { transform: rotate(-10deg); }
+  50%      { transform: rotate(8deg); }
+  75%      { transform: rotate(-4deg); }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0)     rotate(-1.5deg); }
+  50%      { transform: translateY(-14px) rotate(1.5deg); }
+}
+@keyframes shadow {
+  0%, 100% { transform: scaleX(1);    opacity: 1; }
+  50%      { transform: scaleX(.75);  opacity: .55; }
+}
+@keyframes twinkle {
+  0%, 100% { opacity: 1;  transform: scale(1); }
+  50%      { opacity: .3; transform: scale(.8); }
+}
+@keyframes breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.04, 1.06); }
+}
+@keyframes bubble {
+  0%, 100% { transform: scale(.2); }
+  50%      { transform: scale(1); }
+}
+@keyframes zfloat {
+  0%   { opacity: 0; transform: translate(0, 0)         scale(.3); }
+  15%  { opacity: 1; }
+  50%  {             transform: translate(14px, -14px)  scale(.85); }
+  75%  { opacity: .9; }
+  100% { opacity: 0; transform: translate(22px, -30px)  scale(1.4); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cat, .cat-shadow, .sparkle { animation: none; }
+  .kitten svg, .kitten .bubble { animation: none; }
+  .zzz i { animation: none; opacity: .8; }
+  .badge, .plan-wrap, .plan-inner, .cell { transition: none; }
+}
