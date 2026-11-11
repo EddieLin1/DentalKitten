@@ -160,6 +160,7 @@ img, svg { -webkit-user-drag: none; }
   font-weight: 700;
   font-size: .9rem;
   letter-spacing: .03em;
+  text-align: center;    /* each header sits over the middle of its column */
   white-space: normal;   /* long names wrap onto two lines */
   line-height: 1.2;
   vertical-align: middle;
@@ -167,6 +168,21 @@ img, svg { -webkit-user-drag: none; }
   cursor: default;     /* no text cursor on hover */
 }
 .plan th:first-child { font-size: 1.1rem; }
+/* Clickable "Kittens" header: looks like the other headers, but expands / shrinks every row */
+.kittens-toggle {
+  padding: 2px 6px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+  transition: background .15s ease, transform .15s ease;
+}
+.kittens-toggle:hover  { background: rgba(255, 255, 255, .55); }
+.kittens-toggle:active { transform: scale(.95); }
+.kittens-toggle:focus-visible { outline: 3px solid var(--title-green); outline-offset: 2px; }
 .plan .notes-col { width: 220px; }
 .plan td {
   padding: 0 12px;
@@ -278,18 +294,39 @@ img, svg { -webkit-user-drag: none; }
   display: inline-block;
   box-sizing: border-box;
   width: 112px;
+  height: calc(1.4em + 12px);   /* fixed so it can animate to 0 when minimized */
   padding: 4px 8px;
   border: 2px solid transparent;
   border-radius: 8px;
   font: 600 1rem/1.4 "Fredoka", sans-serif;
   letter-spacing: .05em;
+  text-align: center;
 }
-.cell--date { min-width: 112px; }
+.cell--date {
+  min-width: 112px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+}
+/* Minimized: the date takes no space, so DUE sits alone in the middle */
+tr:not(.is-expanded) .cell--date .date { height: 0; padding: 0; border-width: 0; overflow: hidden; }
+
+/* DUE under the date: faint until a date is entered, then darker. Shown in both states. */
+.due {
+  font-size: .8rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  color: #d3d8d1;
+  user-select: none;
+  transition: color .2s ease;
+}
+.has-date .due { color: #6f746d; }
 .date {
   font-weight: 600;
   letter-spacing: .05em;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  overflow: hidden;      /* text stays inside while the box animates */
   cursor: pointer;
   user-select: none;
 }
@@ -303,6 +340,19 @@ img, svg { -webkit-user-drag: none; }
   opacity: 1;
   visibility: visible;
   transition: opacity .3s ease .2s, visibility 0s .2s;
+}
+/* The date shrinks/grows in step with the row, so DUE glides into place instead of jumping */
+.cell--date .date {
+  transition: opacity .2s ease, visibility 0s .2s,
+              height .35s cubic-bezier(.65, 0, .35, 1),
+              padding .35s cubic-bezier(.65, 0, .35, 1),
+              border-width .35s cubic-bezier(.65, 0, .35, 1);
+}
+.is-expanded .cell--date .date {
+  transition: opacity .3s ease .2s, visibility 0s .2s,
+              height .35s cubic-bezier(.65, 0, .35, 1),
+              padding .35s cubic-bezier(.65, 0, .35, 1),
+              border-width .35s cubic-bezier(.65, 0, .35, 1);
 }
 .date.is-empty { color: #cdd6ca; }
 .date .slash   { color: #7f927b; }
@@ -360,6 +410,36 @@ tr:not(.is-expanded) .os { height: 0; overflow: hidden; }
   justify-content: center;
   gap: 5px;
 }
+/* Minimized row: picked treatments as small circles (FI, CR, EX…) */
+.cell--os { flex-direction: column; justify-content: center; }
+.os-mini {
+  display: flex;
+  justify-content: center;
+  gap: 3px;
+  overflow: hidden;
+  user-select: none;
+  transition: opacity .3s ease .2s, visibility 0s .2s;
+}
+.os-mini span {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: inset 0 0 0 2px var(--green-dark);
+  color: var(--ink);
+  font-size: .62rem;
+  font-weight: 700;
+}
+/* Expanded: the full chips show instead, so the circles fade out and take no space */
+.is-expanded .os-mini {
+  height: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .2s ease, visibility 0s .2s;
+}
+
 .chip { position: relative; cursor: pointer; }
 .chip__box {                                   /* real checkbox, hidden but still focusable */
   position: absolute;

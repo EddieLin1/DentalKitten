@@ -21,7 +21,8 @@
       <table class="plan" data-date-columns="{{ date_columns|length }}">
         <thead>
           <tr>
-            <th>Kittens</th>
+            <th><button class="kittens-toggle" id="toggle-all" type="button"
+                        title="Expand / shrink all kittens">Kittens</button></th>
             <th class="status-col"></th>
             {% for column in date_columns %}
             {# let long names like Panoramic/STAT/iTero wrap after each slash #}

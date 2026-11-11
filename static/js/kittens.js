@@ -118,8 +118,12 @@ function createRow({ kitten, sleep, delay, expanded = false, dates = [], notes =
         <label class="status__yesno">No <input type="checkbox" role="switch" class="switch" data-field="insurance" aria-label="Insurance"> Yes</label>
       </div>
     </div></td>
-    ${`<td><div class="cell cell--date"><span class="date" tabindex="0" title="Click to edit"></span></div></td>`.repeat(dateColumns)}
-    <td><div class="cell">
+    ${Array.from({ length: dateColumns }, (_, i) => `<td><div class="cell cell--date">
+      <span class="date" tabindex="0" title="Click to edit"></span>
+      ${i > 0 ? '<span class="due">DUE</span>' : ""}
+    </div></td>`).join("")}
+    <td><div class="cell cell--os">
+      <div class="os-mini" aria-hidden="true"></div>
       <div class="os">
         <p class="status__title">O/S</p>
         <div class="os__chips">
@@ -140,7 +144,14 @@ function createRow({ kitten, sleep, delay, expanded = false, dates = [], notes =
   tr.querySelector('[data-field="after"]').checked = after;
   tr.querySelector('[data-field="insurance"]').checked = insurance;
   tr.querySelectorAll(".chip__box").forEach((box) => { box.checked = outstanding.includes(box.value); });
+  renderOsMini(tr);
   tbody.appendChild(tr);
+}
+
+// Minimized row: a little circle (FI, CR, EX…) for each picked treatment
+function renderOsMini(tr) {
+  tr.querySelector(".os-mini").innerHTML = [...tr.querySelectorAll(".chip__box:checked")]
+    .map((box) => `<span title="${box.value}">${box.value.slice(0, 2)}</span>`).join("");
 }
 
 document.getElementById("add-kitten").addEventListener("click", () => {
@@ -177,6 +188,19 @@ tbody.addEventListener("click", (e) => {
   saveRows();
 });
 
+// "Kittens" header: expand every row, or shrink them all if they're all already open
+document.getElementById("toggle-all").addEventListener("click", () => {
+  const rows = [...tbody.querySelectorAll("tr:not(.is-removing)")];
+  if (!rows.length) return;
+  playRandomMeow();
+  const open = rows.some((tr) => !tr.classList.contains("is-expanded"));
+  rows.forEach((tr) => {
+    tr.classList.toggle("is-expanded", open);
+    tr.querySelector(".kitten").setAttribute("aria-expanded", open);
+  });
+  saveRows();
+});
+
 // Clear-all trash in the header. First click arms it ("Clear all?"),
 // a second click within 3 seconds clears every row.
 const clearAll = document.getElementById("clear-all");
@@ -207,6 +231,7 @@ clearAll.addEventListener("click", () => {
 
 // Dentist / Insurance switches and O/S picks save when changed
 tbody.addEventListener("change", (e) => {
+  if (e.target.matches(".chip__box")) renderOsMini(e.target.closest("tr"));
   if (e.target.matches(".switch, .chip__box")) saveRows();
 });
 
@@ -249,6 +274,7 @@ function editNotes(el) {
 function renderDate(el) {
   const value = el.dataset.value || "";
   el.classList.toggle("is-empty", !value);
+  el.closest(".cell")?.classList.toggle("has-date", !!value);   // darkens the DUE label
   // value only ever holds digits and slashes, so this is safe
   el.innerHTML = (value || "MM/DD/YY").split("/").join('<span class="slash">/</span>');
 }
@@ -273,8 +299,8 @@ function editDate(el) {
   });
   input.addEventListener("blur", () => {          // clicking out saves it
     el.dataset.value = input.value;
-    renderDate(el);
     input.replaceWith(el);
+    renderDate(el);
     saveRows();
   });
 

@@ -4,13 +4,13 @@ app = Flask(__name__)
 
 # Date columns between the Dentist/Insurance column and "Outstanding treatments", in order.
 DATE_COLUMNS = [
-    "Scaling",
+    "Last Visit",
     "Polish",
     "Fluoride",
     "Bitewings",
     "Periapicals",
     "Panoramic/STAT/iTero",
-    "Perio charting",
+    "Perio Charting",
     "Recall Exam",
 ]
 
