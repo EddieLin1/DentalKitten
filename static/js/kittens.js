@@ -90,7 +90,11 @@ const TRASH_SVG = `
 
 // ---------- Rows ----------
 // Builds one row. `data` is either a freshly made row or one loaded from storage.
-function createRow({ kitten, sleep, delay, expanded = false, dates = [], notes = "" }) {
+// Outstanding treatments: any number can be picked
+const TREATMENTS = ["FILLS", "CRN", "EXO", "BRIDGE", "RCT", "IMPLANT", "CONSULT"];
+
+function createRow({ kitten, sleep, delay, expanded = false, dates = [], notes = "",
+                     before = false, after = false, insurance = false, outstanding = [] }) {
   const k = KITTENS[kitten];
   const tr = document.createElement("tr");
   tr.dataset.kitten = kitten;
@@ -105,7 +109,24 @@ function createRow({ kitten, sleep, delay, expanded = false, dates = [], notes =
         <span class="zzz" aria-hidden="true"><i>Z</i><i>Z</i><i>Z</i></span>
       </button>
     </div></td>
-    ${`<td><div class="cell"><span class="date" tabindex="0" title="Click to edit"></span></div></td>`.repeat(dateColumns)}
+    <td><div class="cell">
+      <div class="status">
+        <p class="status__title">Dentist</p>
+        <label class="status__row">Before <input type="checkbox" role="switch" class="switch" data-field="before"></label>
+        <label class="status__row">After <input type="checkbox" role="switch" class="switch" data-field="after"></label>
+        <p class="status__title">Insurance</p>
+        <label class="status__yesno">No <input type="checkbox" role="switch" class="switch" data-field="insurance" aria-label="Insurance"> Yes</label>
+      </div>
+    </div></td>
+    ${`<td><div class="cell cell--date"><span class="date" tabindex="0" title="Click to edit"></span></div></td>`.repeat(dateColumns)}
+    <td><div class="cell">
+      <div class="os">
+        <p class="status__title">O/S</p>
+        <div class="os__chips">
+          ${TREATMENTS.map((t) => `<label class="chip"><input type="checkbox" class="chip__box" value="${t}"><span>${t}</span></label>`).join("")}
+        </div>
+      </div>
+    </div></td>
     <td><div class="cell cell--notes"><textarea class="notes" readonly placeholder="Add notes…"
          aria-label="Notes (double-click to edit)" title="Double-click to edit"></textarea></div></td>
     <td><div class="cell"><button class="trash" type="button" aria-label="Delete ${k.name}" title="Delete row">${TRASH_SVG}</button></div></td>`;
@@ -115,6 +136,10 @@ function createRow({ kitten, sleep, delay, expanded = false, dates = [], notes =
     renderDate(el);
   });
   tr.querySelector(".notes").value = notes;
+  tr.querySelector('[data-field="before"]').checked = before;
+  tr.querySelector('[data-field="after"]').checked = after;
+  tr.querySelector('[data-field="insurance"]').checked = insurance;
+  tr.querySelectorAll(".chip__box").forEach((box) => { box.checked = outstanding.includes(box.value); });
   tbody.appendChild(tr);
 }
 
@@ -125,8 +150,11 @@ document.getElementById("add-kitten").addEventListener("click", () => {
     // Each kitten gets its own breathing speed and start offset
     sleep: (2.4 + Math.random() * 2).toFixed(2),
     delay: (Math.random() * 3).toFixed(2),
+    expanded: true,
   });
   saveRows();
+  // Bring the new kitten and the first columns into view
+  document.querySelector(".plan-scroll").scrollTo({ left: 0, behavior: "smooth" });
 });
 
 tbody.addEventListener("click", (e) => {
@@ -175,6 +203,11 @@ clearAll.addEventListener("click", () => {
   playTrashSound();
   rows.forEach((tr) => tr.classList.add("is-removing"));
   setTimeout(() => { rows.forEach((tr) => tr.remove()); saveRows(); }, 350);
+});
+
+// Dentist / Insurance switches and O/S picks save when changed
+tbody.addEventListener("change", (e) => {
+  if (e.target.matches(".switch, .chip__box")) saveRows();
 });
 
 // Notes save as you type
@@ -261,11 +294,15 @@ function saveRows() {
     delay: tr.dataset.delay,
     expanded: tr.classList.contains("is-expanded"),
     // a date being edited right now is an <input>; keep its last saved value
-    dates: [...tr.querySelectorAll("td")].slice(1, 1 + dateColumns).map((td) => {
-      const span = td.querySelector(".date");
+    dates: [...tr.querySelectorAll(".cell--date")].map((cell) => {
+      const span = cell.querySelector(".date");
       return span ? span.dataset.value || "" : "";
     }),
     notes: tr.querySelector(".notes").value,
+    before: tr.querySelector('[data-field="before"]').checked,
+    after: tr.querySelector('[data-field="after"]').checked,
+    insurance: tr.querySelector('[data-field="insurance"]').checked,
+    outstanding: [...tr.querySelectorAll(".chip__box:checked")].map((box) => box.value),
   }));
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(rows));
@@ -288,6 +325,10 @@ function loadRows() {
       expanded: row.expanded === true,
       dates: Array.isArray(row.dates) ? row.dates : [],
       notes: typeof row.notes === "string" ? row.notes : "",
+      before: row.before === true,
+      after: row.after === true,
+      insurance: row.insurance === true,
+      outstanding: Array.isArray(row.outstanding) ? row.outstanding : [],
     });
   }
   // so the next new kitten isn't the same as the last saved one

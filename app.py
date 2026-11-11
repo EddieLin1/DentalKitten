@@ -2,7 +2,17 @@ from flask import Flask, render_template
 
 app = Flask(__name__)
 
-DATE_COLUMNS = 6
+# Date columns between the Dentist/Insurance column and "Outstanding treatments", in order.
+DATE_COLUMNS = [
+    "Scaling",
+    "Polish",
+    "Fluoride",
+    "Bitewings",
+    "Periapicals",
+    "Panoramic/STAT/iTero",
+    "Perio charting",
+    "Recall Exam",
+]
 
 
 @app.route("/")

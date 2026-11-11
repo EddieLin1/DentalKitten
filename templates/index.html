@@ -18,11 +18,16 @@
 <div class="plan-wrap" id="plan">
   <div class="plan-inner">
     <div class="plan-scroll">
-      <table class="plan" data-date-columns="{{ date_columns }}">
+      <table class="plan" data-date-columns="{{ date_columns|length }}">
         <thead>
           <tr>
             <th>Kittens</th>
-            {% for _ in range(date_columns) %}<th>PLACEHOLDER</th>{% endfor %}
+            <th class="status-col"></th>
+            {% for column in date_columns %}
+            {# let long names like Panoramic/STAT/iTero wrap after each slash #}
+            <th>{% for part in column.split("/") %}{{ part }}{% if not loop.last %}/<wbr>{% endif %}{% endfor %}</th>
+            {% endfor %}
+            <th class="os-col">Outstanding treatments</th>
             <th class="notes-col">Notes</th>
             <th class="trash-col">
               <button class="trash trash--all" id="clear-all" type="button"

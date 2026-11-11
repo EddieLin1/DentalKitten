@@ -128,7 +128,7 @@ img, svg { -webkit-user-drag: none; }
 .plan-wrap {
   display: grid;
   grid-template-rows: 0fr;          /* collapsed: takes no height */
-  width: min(1100px, 100%);
+  width: min(1500px, 100%);
   margin: -12px 0;                  /* cancel the page gap while hidden */
   transition: grid-template-rows .7s cubic-bezier(.65, 0, .35, 1), margin .7s;
 }
@@ -149,7 +149,7 @@ img, svg { -webkit-user-drag: none; }
 }
 .plan {
   width: 100%;
-  min-width: 940px;
+  min-width: 1650px;
   border-collapse: collapse;
   text-align: left;
 }
@@ -160,12 +160,14 @@ img, svg { -webkit-user-drag: none; }
   font-weight: 700;
   font-size: .9rem;
   letter-spacing: .03em;
-  white-space: nowrap;
+  white-space: normal;   /* long names wrap onto two lines */
+  line-height: 1.2;
+  vertical-align: middle;
   user-select: none;   /* header text can't be highlighted */
   cursor: default;     /* no text cursor on hover */
 }
 .plan th:first-child { font-size: 1.1rem; }
-.plan .notes-col { width: 26%; }
+.plan .notes-col { width: 220px; }
 .plan td {
   padding: 0 12px;
   border-top: 2px solid var(--bg);
@@ -179,7 +181,7 @@ img, svg { -webkit-user-drag: none; }
   transition: height .35s cubic-bezier(.65, 0, .35, 1);
 }
 .is-expanded .cell { height: 160px; }
-.cell--notes { align-items: stretch; padding: 4px 0; }
+.cell--notes { align-items: stretch; padding: 4px 0; min-width: 200px; }
 .is-expanded .cell--notes { padding: 8px 0; }
 
 /* Kitten avatar */
@@ -270,9 +272,20 @@ img, svg { -webkit-user-drag: none; }
 .add-btn:active { transform: translateY(1px); }
 
 /* Dates: faint MM/DD/YY with darker slashes */
-.date {
+/* The date and its edit box share the exact same box, so swapping one for
+   the other never changes the column width */
+.date, .date-input {
+  display: inline-block;
+  box-sizing: border-box;
+  width: 112px;
   padding: 4px 8px;
+  border: 2px solid transparent;
   border-radius: 8px;
+  font: 600 1rem/1.4 "Fredoka", sans-serif;
+  letter-spacing: .05em;
+}
+.cell--date { min-width: 112px; }
+.date {
   font-weight: 600;
   letter-spacing: .05em;
   font-variant-numeric: tabular-nums;
@@ -281,12 +294,12 @@ img, svg { -webkit-user-drag: none; }
   user-select: none;
 }
 /* Dates and trash hide while the row is minimized, and fade in once it has expanded */
-.date, .date-input, .trash {
+.date, .date-input, .trash, .status, .os {
   opacity: 0;
   visibility: hidden;
   transition: opacity .2s ease, visibility 0s .2s;
 }
-.is-expanded .date, .is-expanded .date-input, .is-expanded .trash {
+.is-expanded .date, .is-expanded .date-input, .is-expanded .trash, .is-expanded .status, .is-expanded .os {
   opacity: 1;
   visibility: visible;
   transition: opacity .3s ease .2s, visibility 0s .2s;
@@ -295,14 +308,115 @@ img, svg { -webkit-user-drag: none; }
 .date .slash   { color: #7f927b; }
 .date:hover    { background: #f3f7f2; }
 .date-input {
-  width: 92px;
-  padding: 4px 8px;
-  border: 2px solid var(--circle-ring);
-  border-radius: 8px;
-  font: 600 1rem "Fredoka", sans-serif;
-  letter-spacing: .05em;
+  border-color: var(--circle-ring);
+  background: #fff;
+  color: var(--ink);
   outline: none;
 }
+
+/* Dentist / Insurance column */
+.status-col { width: 150px; }
+.status {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 128px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+/* When minimized, take up no space (it's hidden anyway) so the small row doesn't overflow */
+tr:not(.is-expanded) .status { height: 0; overflow: hidden; }
+.status__title {
+  margin: 0;
+  font-size: 1rem;            /* slightly bigger + bold */
+  font-weight: 700;
+  color: var(--title-green);
+}
+.status__title + .status__row { margin-top: 1px; }
+.status__row + .status__title { margin-top: 6px; }
+.status__row,
+.status__yesno {
+  display: flex;
+  align-items: center;
+  font-size: .9rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+.status__row   { justify-content: space-between; }   /* label left, switch right */
+.status__yesno { justify-content: center; gap: 8px; color: #5a5a5a; }
+
+/* Outstanding treatments: O/S title + pick-any chips */
+.plan .os-col { width: 190px; }
+.os {
+  width: 172px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+tr:not(.is-expanded) .os { height: 0; overflow: hidden; }
+.os .status__title { margin-bottom: 6px; text-align: center; }
+.os__chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 5px;
+}
+.chip { position: relative; cursor: pointer; }
+.chip__box {                                   /* real checkbox, hidden but still focusable */
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  margin: 0;
+}
+.chip span {
+  display: block;
+  padding: 3px 9px;
+  border: 2px solid #d5dcd3;
+  border-radius: 999px;
+  background: #fff;
+  color: #5a5a5a;
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: .03em;
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+.chip:hover span { border-color: var(--green); }
+.chip__box:checked + span {
+  border-color: var(--green-dark);
+  background: var(--green);
+  color: var(--ink);
+}
+.chip__box:focus-visible + span { outline: 3px solid var(--title-green); outline-offset: 1px; }
+
+/* Toggle switch (a styled checkbox) */
+.switch {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  flex: none;
+  width: 36px;
+  height: 20px;
+  margin: 0;
+  border-radius: 999px;
+  background: #d5dcd3;
+  cursor: pointer;
+  transition: background .2s ease;
+}
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .2);
+  transition: transform .2s ease;
+}
+.switch:checked { background: var(--green); }
+.switch:checked::after { transform: translateX(16px); }
+.switch:focus-visible { outline: 3px solid var(--title-green); outline-offset: 2px; }
 
 /* Notes */
 .notes {
@@ -439,5 +553,5 @@ tr.is-removing .cell {
   .cat, .cat-shadow, .sparkle { animation: none; }
   .kitten svg, .kitten .bubble { animation: none; }
   .zzz i { animation: none; opacity: .8; }
-  .badge, .plan-wrap, .plan-inner, .cell { transition: none; }
+  .badge, .plan-wrap, .plan-inner, .cell, .switch, .switch::after { transition: none; }
 }
