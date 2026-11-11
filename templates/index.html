@@ -52,6 +52,7 @@
   const heading = document.getElementById("heading");
   let swap;
   toggle.addEventListener("click", () => {
+    playRandomMeow();
     const open = document.body.classList.toggle("is-planning");
     toggle.setAttribute("aria-expanded", open);
     toggle.textContent = open ? "Back" : "Plan";
