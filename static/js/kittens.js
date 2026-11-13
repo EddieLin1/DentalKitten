@@ -63,6 +63,11 @@ const table = document.querySelector(".plan");
 const tbody = document.getElementById("kitten-rows");
 const dateColumns = Number(table.dataset.dateColumns);
 const dueMonths = table.dataset.dueMonths.split(",").map((m) => Number(m) || 0);   // 0 = never due
+const insuranceCols = table.dataset.insuranceCols.split(",").filter(Boolean).map(Number);
+const askCols = table.dataset.askCols.split(",").filter(Boolean).map(Number);
+const askEarlyCols = table.dataset.askEarlyCols.split(",").filter(Boolean).map(Number);
+const lightCols = table.dataset.lightCols.split(",").filter(Boolean).map(Number);
+const SOON_MONTHS = 2;   // DUE turns yellow this many months before the due date
 // Random kittens: deal from a shuffled "bag" of all 8 so every look shows up
 // before any repeats, and refill it with a fresh shuffle when it runs out.
 let bag = [];
@@ -111,7 +116,7 @@ const TREATMENTS = Object.keys(TREATMENT_COLOURS);
 const treatmentStyle = (t) => `--tc:${TREATMENT_COLOURS[t][0]};--tc-dark:${TREATMENT_COLOURS[t][1]}`;
 
 function createRow({ kitten, sleep, delay, expanded = false, dates = [], notes = "",
-                     before = false, after = false, insurance = false, outstanding = [] }) {
+                     before = false, after = false, insurance = false, outstanding = [], covered = [] }) {
   const k = KITTENS[kitten];
   const tr = document.createElement("tr");
   tr.dataset.kitten = kitten;
@@ -142,6 +147,8 @@ function createRow({ kitten, sleep, delay, expanded = false, dates = [], notes =
       <span class="since"></span>
       <span class="date" tabindex="0" title="Click to edit"></span>
       ${i > 0 ? '<span class="due">DUE</span>' : '<span class="date-mini" aria-hidden="true"></span>'}
+      ${insuranceCols.includes(i) ? `<label class="status__yesno ins-item">No <input type="checkbox" role="switch"
+        class="switch" data-covered aria-label="Covered by insurance"${covered[i] ? " checked" : ""}> Yes</label>` : ""}
     </div></td>`).join("")}
     <td><div class="cell cell--os">
       <div class="os-mini" aria-hidden="true"></div>
@@ -156,14 +163,15 @@ function createRow({ kitten, sleep, delay, expanded = false, dates = [], notes =
          aria-label="Notes (double-click to edit)" title="Double-click to edit"></textarea></div></td>
     <td><div class="cell"><button class="trash" type="button" aria-label="Delete ${k.name}" title="Delete row">${TRASH_SVG}</button></div></td>`;
 
-  tr.querySelectorAll(".date").forEach((el, i) => {
-    el.dataset.value = formatDate(dates[i] || "");   // re-format so stored text is always just digits + slashes
-    renderDate(el);
-  });
   tr.querySelector(".notes").value = notes;
   tr.querySelector('[data-field="before"]').checked = before;
   tr.querySelector('[data-field="after"]').checked = after;
   tr.querySelector('[data-field="insurance"]').checked = insurance;
+  // after the switches, since DUE / ASK depends on the insurance ones
+  tr.querySelectorAll(".date").forEach((el, i) => {
+    el.dataset.value = formatDate(dates[i] || "");   // re-format so stored text is always just digits + slashes
+    renderDate(el);
+  });
   tr.querySelectorAll(".chip__box").forEach((box) => { box.checked = outstanding.includes(box.value); });
   tbody.appendChild(tr);
   renderOsMini(tr);   // after appending, so it can measure whether the full names fit
@@ -263,6 +271,10 @@ clearAll.addEventListener("click", () => {
 // Dentist / Insurance switches and O/S picks save when changed
 tbody.addEventListener("change", (e) => {
   if (e.target.matches(".chip__box")) renderOsMini(e.target.closest("tr"));
+  // insurance switches change whether an overdue Polish / Fluoride says DUE or ASK
+  if (e.target.matches('[data-field="insurance"], [data-covered]')) {
+    e.target.closest("tr").querySelectorAll(".date").forEach(renderDate);
+  }
   if (e.target.matches(".switch, .chip__box")) saveRows();
 });
 
@@ -341,7 +353,8 @@ function startOfToday() {
 }
 
 // How long ago a date was: "5M" if exactly 5 months to the day, "5M+" if further back than that
-// (but not yet 6 months), "<1M" under a month. Blank with no date, or a date in the future.
+// (but not yet 6 months), "<1M" under a month. From a year on it's years + months: "1Y 0M+", "2Y 3M".
+// Blank with no date, or a date in the future.
 function monthsSince(date) {
   const today = startOfToday();
   if (!date || date > today) return "";
@@ -349,17 +362,34 @@ function monthsSince(date) {
   let months = (today.getFullYear() - date.getFullYear()) * 12 + today.getMonth() - date.getMonth();
   if (addMonths(date, months) > today) months--;
   if (months === 0) return "<1M";
-  const exact = addMonths(date, months).getTime() === today.getTime();
-  return `${months}M${exact ? "" : "+"}`;
+  const plus = addMonths(date, months).getTime() === today.getTime() ? "" : "+";
+  if (months < 12) return `${months}M${plus}`;
+  return `${Math.floor(months / 12)}Y ${months % 12}M${plus}`;
 }
 
 // DUE label: faint with no date; "DUE <date>" once there is one; red once that day has come
+// Polish / Fluoride / Recall Exam (askCols): once due, red DUE only if insurance covers it (row's Insurance
+// is Yes and that column's switch is Yes); otherwise a blue "ASK <date>".
 function renderDue(due, value) {
+  const cell = due.closest(".cell");
+  const col = Number(cell.dataset.col);
   const last = parseDate(value);
-  const months = dueMonths[Number(due.closest(".cell").dataset.col)];
+  const months = dueMonths[col];
   const dueDate = last && months ? addMonths(last, months) : null;
-  due.textContent = dueDate ? `DUE ${toMMDDYY(dueDate)}` : "DUE";
-  due.classList.toggle("is-due", !!dueDate && dueDate <= startOfToday());
+  const isDue = !!dueDate && dueDate <= startOfToday();
+  const covered = !!cell.closest("tr")?.querySelector('[data-field="insurance"]')?.checked
+               && !!cell.querySelector("[data-covered]")?.checked;
+  // Recall Exam (askEarlyCols) also asks before it's due when insurance covers it
+  const ask = askCols.includes(col) && !!dueDate
+           && ((isDue && !covered) || (!isDue && covered && askEarlyCols.includes(col)));
+  due.textContent = dueDate ? `${ask ? "ASK" : "DUE"} ${toMMDDYY(dueDate)}` : "DUE";
+  due.classList.toggle("is-due", isDue && !ask);
+  due.classList.toggle("is-ask", ask);
+  // Every date column (not Last Visit): yellow in the last SOON_MONTHS before it's due.
+  // Bitewings / Periapicals / Perio Charting (lightCols) are also green before that.
+  const soon = !!dueDate && !isDue && !ask && addMonths(dueDate, -SOON_MONTHS) <= startOfToday();
+  due.classList.toggle("is-soon", soon);
+  due.classList.toggle("is-ok", !!dueDate && !isDue && !ask && !soon && lightCols.includes(col));
 }
 
 function formatDate(raw) {
@@ -411,6 +441,8 @@ function saveRows() {
     before: tr.querySelector('[data-field="before"]').checked,
     after: tr.querySelector('[data-field="after"]').checked,
     insurance: tr.querySelector('[data-field="insurance"]').checked,
+    // per date column: its insurance No/Yes switch (false for columns without one)
+    covered: [...tr.querySelectorAll(".cell--date")].map((cell) => !!cell.querySelector("[data-covered]")?.checked),
     outstanding: [...tr.querySelectorAll(".chip__box:checked")].map((box) => box.value),
   }));
   try {
@@ -437,6 +469,7 @@ function loadRows() {
       before: row.before === true,
       after: row.after === true,
       insurance: row.insurance === true,
+      covered: Array.isArray(row.covered) ? row.covered.map((c) => c === true) : [],
       outstanding: Array.isArray(row.outstanding) ? row.outstanding : [],
     });
   }

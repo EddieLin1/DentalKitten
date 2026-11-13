@@ -26,7 +26,11 @@
     <p class="today">Today's date is: <span class="today-colour" id="today-date"></span></p>
     <div class="plan-scroll">
       <table class="plan" data-date-columns="{{ date_columns|length }}"
-             data-due-months="{% for _, months in date_columns %}{{ months or '' }}{% if not loop.last %},{% endif %}{% endfor %}">
+             data-due-months="{% for _, months in date_columns %}{{ months or '' }}{% if not loop.last %},{% endif %}{% endfor %}"
+             data-insurance-cols="{{ insurance_cols|join(',') }}"
+             data-ask-cols="{{ ask_cols|join(',') }}"
+             data-ask-early-cols="{{ ask_early_cols|join(',') }}"
+             data-light-cols="{{ light_cols|join(',') }}">
         <thead>
           <tr>
             <th><button class="kittens-toggle" id="toggle-all" type="button"
