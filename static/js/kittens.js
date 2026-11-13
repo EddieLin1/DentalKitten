@@ -163,6 +163,11 @@ function createRow({ kitten, sleep, delay, expanded = false, dates = [], notes =
          aria-label="Notes (double-click to edit)" title="Double-click to edit"></textarea></div></td>
     <td><div class="cell"><button class="trash" type="button" aria-label="Delete ${k.name}" title="Delete row">${TRASH_SVG}</button></div></td>`;
 
+  // Column names on the date / O/S / notes cells, shown above each one on phones (stacked layout)
+  const heads = table.querySelectorAll("thead th");
+  tr.querySelectorAll("td").forEach((td, i) => {
+    if (i >= 2 && i < heads.length - 1) td.dataset.label = heads[i].textContent.trim();
+  });
   tr.querySelector(".notes").value = notes;
   tr.querySelector('[data-field="before"]').checked = before;
   tr.querySelector('[data-field="after"]').checked = after;
@@ -539,4 +544,3 @@ catImg.addEventListener("error", () => {
   showCatMessage("No cat this time. Try again!");
   catBtn.disabled = false;
 });
-
