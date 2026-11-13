@@ -62,18 +62,24 @@ function kittenSVG(k) {
 const table = document.querySelector(".plan");
 const tbody = document.getElementById("kitten-rows");
 const dateColumns = Number(table.dataset.dateColumns);
+const dueMonths = table.dataset.dueMonths.split(",").map((m) => Number(m) || 0);   // 0 = never due
 // Random kittens: deal from a shuffled "bag" of all 8 so every look shows up
 // before any repeats, and refill it with a fresh shuffle when it runs out.
 let bag = [];
 let lastKitten = null;
 
+function shuffled(items) {
+  const out = [...items];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
 function nextKitten() {
   if (bag.length === 0) {
-    bag = [...KITTENS];
-    for (let i = bag.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [bag[i], bag[j]] = [bag[j], bag[i]];
-    }
+    bag = shuffled(KITTENS);
     // don't repeat the same kitten across the bag boundary
     if (bag[bag.length - 1] === lastKitten) bag.unshift(bag.pop());
   }
@@ -91,7 +97,18 @@ const TRASH_SVG = `
 // ---------- Rows ----------
 // Builds one row. `data` is either a freshly made row or one loaded from storage.
 // Outstanding treatments: any number can be picked
-const TREATMENTS = ["FILLS", "CRN", "EXO", "BRIDGE", "RCT", "IMPLANT", "CONSULT"];
+// Each one always shows in its own pastel colour: [fill, border]
+const TREATMENT_COLOURS = {
+  FILLS:   ["#c3e2f6", "#7fb6dc"],   // blue
+  CRN:     ["#fbe3a6", "#e1b650"],   // butter yellow
+  EXO:     ["#f9c6c3", "#e08a84"],   // coral
+  BRIDGE:  ["#dacdf3", "#a891d9"],   // lavender
+  RCT:     ["#c8ebd4", "#7fc499"],   // mint
+  IMPLANT: ["#fcd3b6", "#e8a06e"],   // peach
+  CONSULT: ["#f5cbe6", "#d68ebd"],   // pink
+};
+const TREATMENTS = Object.keys(TREATMENT_COLOURS);
+const treatmentStyle = (t) => `--tc:${TREATMENT_COLOURS[t][0]};--tc-dark:${TREATMENT_COLOURS[t][1]}`;
 
 function createRow({ kitten, sleep, delay, expanded = false, dates = [], notes = "",
                      before = false, after = false, insurance = false, outstanding = [] }) {
@@ -109,7 +126,10 @@ function createRow({ kitten, sleep, delay, expanded = false, dates = [], notes =
         <span class="zzz" aria-hidden="true"><i>Z</i><i>Z</i><i>Z</i></span>
       </button>
     </div></td>
-    <td><div class="cell">
+    <td><div class="cell cell--status">
+      <div class="status-mini" aria-hidden="true">Insurance
+        <span class="ins-mark ins-mark--yes">✓</span><span class="ins-mark ins-mark--no">✕</span>
+      </div>
       <div class="status">
         <p class="status__title">Dentist</p>
         <label class="status__row">Before <input type="checkbox" role="switch" class="switch" data-field="before"></label>
@@ -118,16 +138,16 @@ function createRow({ kitten, sleep, delay, expanded = false, dates = [], notes =
         <label class="status__yesno">No <input type="checkbox" role="switch" class="switch" data-field="insurance" aria-label="Insurance"> Yes</label>
       </div>
     </div></td>
-    ${Array.from({ length: dateColumns }, (_, i) => `<td><div class="cell cell--date">
+    ${Array.from({ length: dateColumns }, (_, i) => `<td><div class="cell cell--date" data-col="${i}">
       <span class="date" tabindex="0" title="Click to edit"></span>
-      ${i > 0 ? '<span class="due">DUE</span>' : ""}
+      ${i > 0 ? '<span class="due">DUE</span>' : '<span class="date-mini" aria-hidden="true"></span>'}
     </div></td>`).join("")}
     <td><div class="cell cell--os">
       <div class="os-mini" aria-hidden="true"></div>
       <div class="os">
         <p class="status__title">O/S</p>
         <div class="os__chips">
-          ${TREATMENTS.map((t) => `<label class="chip"><input type="checkbox" class="chip__box" value="${t}"><span>${t}</span></label>`).join("")}
+          ${TREATMENTS.map((t) => `<label class="chip" style="${treatmentStyle(t)}"><input type="checkbox" class="chip__box" value="${t}"><span>${t}</span></label>`).join("")}
         </div>
       </div>
     </div></td>
@@ -144,15 +164,25 @@ function createRow({ kitten, sleep, delay, expanded = false, dates = [], notes =
   tr.querySelector('[data-field="after"]').checked = after;
   tr.querySelector('[data-field="insurance"]').checked = insurance;
   tr.querySelectorAll(".chip__box").forEach((box) => { box.checked = outstanding.includes(box.value); });
-  renderOsMini(tr);
   tbody.appendChild(tr);
+  renderOsMini(tr);   // after appending, so it can measure whether the full names fit
 }
 
-// Minimized row: a little circle (FI, CR, EX…) for each picked treatment
+// Minimized row: the picked treatments' full names if they all fit,
+// otherwise a little circle (FI, CR, EX…) for each
 function renderOsMini(tr) {
-  tr.querySelector(".os-mini").innerHTML = [...tr.querySelectorAll(".chip__box:checked")]
-    .map((box) => `<span title="${box.value}">${box.value.slice(0, 2)}</span>`).join("");
+  const mini = tr.querySelector(".os-mini");
+  const picked = [...tr.querySelectorAll(".chip__box:checked")].map((box) => box.value);
+  const draw = (short) => {
+    mini.classList.toggle("is-short", short);
+    mini.innerHTML = picked.map((t) =>
+      `<span style="${treatmentStyle(t)}" title="${t}">${short ? t.slice(0, 2) : t}</span>`).join("");
+  };
+  draw(false);
+  if (mini.scrollWidth > mini.clientWidth) draw(true);
 }
+// Text widths change once the web font loads, so re-check then
+document.fonts.ready.then(() => tbody.querySelectorAll("tr").forEach(renderOsMini));
 
 document.getElementById("add-kitten").addEventListener("click", () => {
   playRandomMeow();
@@ -275,8 +305,45 @@ function renderDate(el) {
   const value = el.dataset.value || "";
   el.classList.toggle("is-empty", !value);
   el.closest(".cell")?.classList.toggle("has-date", !!value);   // darkens the DUE label
+  const mini = el.closest(".cell")?.querySelector(".date-mini");   // Last Visit, shown when minimized
+  if (mini) mini.textContent = value;
+  const due = el.closest(".cell")?.querySelector(".due");
+  if (due) renderDue(due, value);
   // value only ever holds digits and slashes, so this is safe
   el.innerHTML = (value || "MM/DD/YY").split("/").join('<span class="slash">/</span>');
+}
+
+// "MM/DD/YY" -> Date, or null if it isn't a complete, real date
+function parseDate(value) {
+  const m = /^(\d\d)\/(\d\d)\/(\d\d)$/.exec(value);
+  if (!m) return null;
+  const d = new Date(2000 + Number(m[3]), Number(m[1]) - 1, Number(m[2]));
+  return d.getMonth() === Number(m[1]) - 1 ? d : null;   // rejects 02/31 etc.
+}
+
+const pad = (n) => String(n).padStart(2, "0");
+const toMMDDYY = (d) => `${pad(d.getMonth() + 1)}/${pad(d.getDate())}/${pad(d.getFullYear() % 100)}`;
+
+// Same day `months` later, clamped to the month's end (08/31 + 6 months -> 02/28)
+function addMonths(date, months) {
+  const d = new Date(date.getFullYear(), date.getMonth() + months, 1);
+  const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  d.setDate(Math.min(date.getDate(), lastDay));
+  return d;
+}
+
+function startOfToday() {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+}
+
+// DUE label: faint with no date; "DUE <date>" once there is one; red once that day has come
+function renderDue(due, value) {
+  const last = parseDate(value);
+  const months = dueMonths[Number(due.closest(".cell").dataset.col)];
+  const dueDate = last && months ? addMonths(last, months) : null;
+  due.textContent = dueDate ? `DUE ${toMMDDYY(dueDate)}` : "DUE";
+  due.classList.toggle("is-due", !!dueDate && dueDate <= startOfToday());
 }
 
 function formatDate(raw) {
@@ -362,3 +429,65 @@ function loadRows() {
 }
 
 loadRows();
+
+// ---------- Today's date ----------
+// The date above the table is shown in a random pastel, dealt from a shuffled bag (remembered between visits)
+// so every colour comes up before any repeats.
+const TODAY_COLOURS = ["#7fb6dc", "#d9a93f", "#e08a84", "#a891d9", "#6dbb8a", "#e8a06e", "#d68ebd", "#5fbab6"];
+const TODAY_BAG_KEY = "dentalKitten.todayColours.v1";
+
+function nextTodayColour() {
+  let bag = [];
+  try { bag = JSON.parse(localStorage.getItem(TODAY_BAG_KEY)) || []; } catch { /* start fresh */ }
+  bag = bag.filter((c) => TODAY_COLOURS.includes(c));
+  if (!bag.length) bag = shuffled(TODAY_COLOURS);
+  const colour = bag.pop();
+  try { localStorage.setItem(TODAY_BAG_KEY, JSON.stringify(bag)); } catch { /* fine */ }
+  return colour;
+}
+
+// Re-checked every minute and whenever the tab comes back, so it rolls over at midnight
+// (even after the computer was asleep) and every DUE label is recalculated.
+let shownDay = "";
+function refreshToday() {
+  const today = startOfToday();
+  if (today.toDateString() === shownDay) return;
+  shownDay = today.toDateString();
+  document.getElementById("today-date").textContent = toMMDDYY(today);
+  // shared with "Plan" in the "Plan your day!" heading
+  document.documentElement.style.setProperty("--today-colour", nextTodayColour());
+  tbody.querySelectorAll(".date").forEach(renderDate);
+}
+refreshToday();
+setInterval(refreshToday, 60_000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshToday(); });
+
+// ---------- Random cat ----------
+// "cat." fetches a new picture from cataas.com into the box above the table
+const catImg = document.getElementById("cat-img");
+const catMsg = document.getElementById("cat-msg");
+const catBtn = document.getElementById("cat-btn");
+
+function showCatMessage(text) {
+  catImg.hidden = true;
+  catMsg.hidden = false;
+  catMsg.textContent = text;
+}
+
+catBtn.addEventListener("click", () => {
+  playRandomMeow();
+  catBtn.disabled = true;
+  document.querySelector(".cat-pic").classList.add("has-cat");   // first press reveals the box
+  showCatMessage("Fetching a cat…");
+  catImg.src = `https://cataas.com/cat?t=${Date.now()}`;   // the timestamp stops the browser reusing the last cat
+});
+catImg.addEventListener("load", () => {
+  catImg.hidden = false;
+  catMsg.hidden = true;
+  catBtn.disabled = false;
+});
+catImg.addEventListener("error", () => {
+  showCatMessage("No cat this time. Try again!");
+  catBtn.disabled = false;
+});
+

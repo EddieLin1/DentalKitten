@@ -16,15 +16,23 @@
 </div>
 
 <div class="plan-wrap" id="plan">
+  <div class="cat-pic">
+    <div class="cat-pic__frame">
+      <img id="cat-img" alt="A random cat" hidden>
+      <span class="cat-pic__msg" id="cat-msg"></span>
+    </div>
+  </div>
   <div class="plan-inner">
+    <p class="today">Today's date is: <span class="today-colour" id="today-date"></span></p>
     <div class="plan-scroll">
-      <table class="plan" data-date-columns="{{ date_columns|length }}">
+      <table class="plan" data-date-columns="{{ date_columns|length }}"
+             data-due-months="{% for _, months in date_columns %}{{ months or '' }}{% if not loop.last %},{% endif %}{% endfor %}">
         <thead>
           <tr>
             <th><button class="kittens-toggle" id="toggle-all" type="button"
                         title="Expand / shrink all kittens">Kittens</button></th>
-            <th class="status-col"></th>
-            {% for column in date_columns %}
+            <th class="status-col"><button class="btn btn--small" id="cat-btn" type="button">cat.</button></th>
+            {% for column, _ in date_columns %}
             {# let long names like Panoramic/STAT/iTero wrap after each slash #}
             <th>{% for part in column.split("/") %}{{ part }}{% if not loop.last %}/<wbr>{% endif %}{% endfor %}</th>
             {% endfor %}
@@ -51,7 +59,17 @@
   </div>
 </div>
 
-<button class="btn" id="plan-toggle" type="button" aria-expanded="false" aria-controls="plan">Plan</button>
+<div class="menu">
+  <button class="btn" id="plan-toggle" type="button" aria-expanded="false" aria-controls="plan">Plan</button>
+  <button class="mute-btn" id="mute-toggle" type="button" aria-pressed="false" aria-label="Mute sounds" title="Mute sounds">
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/>
+      <g class="mute-btn__waves"><path d="M16 9.5a3.5 3.5 0 0 1 0 5"/><path d="M18.5 7a7 7 0 0 1 0 10"/></g>
+      <g class="mute-btn__x"><path d="M16.5 9.5l5 5M21.5 9.5l-5 5"/></g>
+    </svg>
+  </button>
+</div>
 
 <script>
   const toggle = document.getElementById("plan-toggle");
@@ -67,11 +85,26 @@
     clearTimeout(swap);
     heading.classList.add("is-fading");
     swap = setTimeout(() => {
-      heading.textContent = open ? "Plan your day!" : "Welcome!";
+      heading.innerHTML = open ? '<span class="today-colour">Plan</span> your day!' : "Welcome!";
       heading.classList.remove("is-fading");
     }, 350);
   });
 </script>
 <script src="{{ url_for('static', filename='js/sounds.js') }}"></script>
 <script src="{{ url_for('static', filename='js/kittens.js') }}"></script>
+<script>
+  // Mute button beside Plan: silences every sound, remembered between visits
+  const muteBtn = document.getElementById("mute-toggle");
+  function showMuted() {
+    muteBtn.setAttribute("aria-pressed", muted);
+    muteBtn.setAttribute("aria-label", muted ? "Unmute sounds" : "Mute sounds");
+    muteBtn.title = muted ? "Unmute sounds" : "Mute sounds";
+  }
+  muteBtn.addEventListener("click", () => {
+    setMuted(!muted);
+    showMuted();
+    playRandomMeow();   // a meow when turning sound back on, so you hear it worked
+  });
+  showMuted();
+</script>
 {% endblock %}

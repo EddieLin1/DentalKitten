@@ -1,123 +1,66 @@
-// ---------- Sounds, synthesised with the Web Audio API (no audio files) ----------
-// Kitten mews (20 presets) plus the trash "crumple + clunk" for deleting.
-// Each mew is a pitch contour (start → peak → end) shaped by a "mouth" filter that
-// sweeps m → ee → oo ("mew"). Extra knobs: vibrato (vib/vibDepth) and purr-like trill.
-// Kitten mews are high, short and soft, so pitches are ~800–1800 Hz and under ~0.5s.
-const MEOWS = [
-  { name: "classic mew",  start: 1000, peak: 1300, end: 900,  dur: .30, peakAt: .35 },
-  { name: "tiny squeak",  start: 1400, peak: 1700, end: 1500, dur: .15, peakAt: .4 },
-  { name: "long mew",     start: 900,  peak: 1200, end: 800,  dur: .50, peakAt: .3,  vib: 7,  vibDepth: 20 },
-  { name: "question",     start: 950,  peak: 1050, end: 1400, dur: .30, peakAt: .3 },
-  { name: "sad",          start: 1250, peak: 1280, end: 850,  dur: .45, peakAt: .1 },
-  { name: "mrrp",         start: 800,  peak: 1000, end: 950,  dur: .28, peakAt: .6,  trill: 30 },
-  { name: "itty bitty",   start: 1600, peak: 1800, end: 1550, dur: .12, peakAt: .5 },
-  { name: "low mew",      start: 700,  peak: 900,  end: 650,  dur: .35, peakAt: .4 },
-  { name: "chirp",        start: 1200, peak: 1700, end: 1500, dur: .12, peakAt: .7 },
-  { name: "wobbly",       start: 1050, peak: 1300, end: 1000, dur: .45, peakAt: .4,  vib: 10, vibDepth: 40 },
-  { name: "needy",        start: 1100, peak: 1450, end: 1000, dur: .30, peakAt: .25 },
-  { name: "sleepy",       start: 950,  peak: 1100, end: 750,  dur: .55, peakAt: .5,  vib: 4,  vibDepth: 12 },
-  { name: "trill up",     start: 900,  peak: 1250, end: 1250, dur: .30, peakAt: .7,  trill: 26 },
-  { name: "squeaky",      start: 1350, peak: 1650, end: 1200, dur: .40, peakAt: .3 },
-  { name: "short mew",    start: 1150, peak: 1300, end: 1150, dur: .16, peakAt: .5 },
-  { name: "soft mew",     start: 850,  peak: 1050, end: 800,  dur: .30, peakAt: .2 },
-  { name: "excited",      start: 1200, peak: 1600, end: 1350, dur: .25, peakAt: .5,  vib: 13, vibDepth: 35 },
-  { name: "whiny",        start: 1000, peak: 1150, end: 900,  dur: .50, peakAt: .6 },
-  { name: "tiny trill",   start: 1350, peak: 1550, end: 1450, dur: .22, peakAt: .5,  trill: 32 },
-  { name: "hello",        start: 950,  peak: 1400, end: 1100, dur: .30, peakAt: .45 },
+// ---------- Sounds ----------
+// Real kitten meows (recorded clips, all levelled to the same loudness) plus the
+// synthesised trash "crumple + clunk" for deleting.
+// The purr (3 purrs in one clip) is in the same random pool as the meows.
+const MEOW_FILES = [
+  ...["01", "02", "03", "04", "05", "06", "07"].map((n) => `meows/calling-${n}`),
+  ...["01", "02", "03", "04", "05", "06", "07"].map((n) => `meows/stray-${n}`),
+  ...["01", "02", "03", "04"].map((n) => `meows/dragon-${n}`),
+  "meows/garage-01",
+  "purr",
 ];
+// Played through Web Audio rather than <audio> tags: Safari (iPad/iPhone) ignores preloading for
+// <audio> and drops clips that get interrupted, which left some clicks silent. Every clip is
+// downloaded and decoded up front, so it plays instantly, and overlapping sounds are fine.
+// The context starts paused until the first click (browser autoplay rules); playRandomMeow resumes it.
+// On iPad/iPhone, Web Audio is muted by silent mode unless the page says it plays media
+// like a video does (Safari 16.4+; other browsers don't have navigator.audioSession).
+if (navigator.audioSession) navigator.audioSession.type = "playback";
+let audio = new (window.AudioContext || window.webkitAudioContext)();
+// Every sound goes through this, so the mute button can silence them all at once
+const master = audio.createGain();
+master.connect(audio.destination);
 
-let audio;
+const MUTE_KEY = "dentalKitten.muted";
+let muted = false;
+try { muted = localStorage.getItem(MUTE_KEY) === "1"; } catch { /* storage blocked */ }
+master.gain.value = muted ? 0 : 1;
+
+function setMuted(on) {
+  muted = on;
+  master.gain.value = on ? 0 : 1;
+  try { localStorage.setItem(MUTE_KEY, on ? "1" : "0"); } catch { /* fine */ }
+}
+const meowBuffers = new Array(MEOW_FILES.length).fill(null);   // null until downloaded + decoded
+MEOW_FILES.forEach((name, i) => {
+  fetch(`/static/audio/${name}.mp3`)
+    .then((res) => res.arrayBuffer())
+    .then((data) => audio.decodeAudioData(data))
+    .then((buffer) => { meowBuffers[i] = buffer; })
+    .catch(() => { /* leave it out of the pool */ });
+});
+
+// Playback volume (1 = as recorded). The purr measures as loud as the meows, but as a 3-second
+// rumble it sounds louder, so it gets turned down further to match them by ear.
+const MEOW_VOLUME = 0.35;
+const PURR_VOLUME = 0.2;
+
 let lastMeow = -1;
 
-function playMeow(m) {
-  audio ??= new (window.AudioContext || window.webkitAudioContext)();
-  if (audio.state === "suspended") audio.resume();
-
-  const t = audio.currentTime + 0.01;
-  const d = m.dur;
-  const k = Math.min(1.25, Math.max(0.85, m.peak / 1300)); // smaller kitten = higher "mouth"
-
-  // Voice
-  const osc = audio.createOscillator();
-  osc.type = "sawtooth";
-  osc.frequency.setValueAtTime(m.start, t);
-  osc.frequency.linearRampToValueAtTime(m.peak, t + d * m.peakAt);
-  osc.frequency.exponentialRampToValueAtTime(m.end, t + d);
-
-  const extras = [];
-  if (m.vib) {                                       // vibrato
-    const lfo = audio.createOscillator();
-    const depth = audio.createGain();
-    lfo.frequency.value = m.vib;
-    depth.gain.value = m.vibDepth;
-    lfo.connect(depth).connect(osc.frequency);
-    extras.push(lfo);
-  }
-
-  // Mouth: two formant filters sweeping m → ee → oo ("mew"). The mouth stays fairly
-  // closed (low F1) so it never opens into a long "ow", plus a little soft body.
-  const f1 = audio.createBiquadFilter();
-  const f2 = audio.createBiquadFilter();
-  const body = audio.createBiquadFilter();
-  f1.type = f2.type = "bandpass";
-  f1.Q.value = 5;
-  f2.Q.value = 7;
-  body.type = "lowpass";
-  body.frequency.value = 2000;
-
-  f1.frequency.setValueAtTime(300 * k, t);
-  f1.frequency.linearRampToValueAtTime(520 * k, t + d * .3);
-  f1.frequency.linearRampToValueAtTime(380 * k, t + d);
-  f2.frequency.setValueAtTime(2700 * k, t);
-  f2.frequency.linearRampToValueAtTime(2200 * k, t + d * .35);
-  f2.frequency.linearRampToValueAtTime(1300 * k, t + d);
-
-  const g1 = audio.createGain();   g1.gain.value = .8;
-  const g2 = audio.createGain();   g2.gain.value = .9;
-  const gb = audio.createGain();   gb.gain.value = .25;
-
-  // Trill (rolling "mrrrp")
-  const am = audio.createGain();
-  am.gain.value = 1;
-  if (m.trill) {
-    am.gain.value = .6;
-    const lfo = audio.createOscillator();
-    const depth = audio.createGain();
-    lfo.frequency.value = m.trill;
-    depth.gain.value = .4;
-    lfo.connect(depth).connect(am.gain);
-    extras.push(lfo);
-  }
-
-  // Volume envelope: soft "m" onset, then a gentle fade
-  const env = audio.createGain();
-  env.gain.setValueAtTime(0.0001, t);
-  env.gain.exponentialRampToValueAtTime(0.5, t + Math.min(.05, d * .35));
-  env.gain.setValueAtTime(0.5, t + d * .55);
-  env.gain.exponentialRampToValueAtTime(0.0001, t + d);
-
-  // Take the buzzy edge off so it sounds soft and kitten-like
-  const soften = audio.createBiquadFilter();
-  soften.type = "lowpass";
-  soften.frequency.value = 3800;
-
-  const master = audio.createGain();
-  master.gain.value = 0.7;
-
-  osc.connect(f1).connect(g1).connect(am);
-  osc.connect(f2).connect(g2).connect(am);
-  osc.connect(body).connect(gb).connect(am);
-  am.connect(env).connect(soften).connect(master).connect(audio.destination);
-
-  [osc, ...extras].forEach((node) => { node.start(t); node.stop(t + d + .05); });
-}
-
-// Pick a random meow, never the same one twice in a row
+// Pick a random meow (or the purr), never the same one twice in a row.
+// Only clips that are ready are picked, so a click never lands on a silent one.
 function playRandomMeow() {
-  let i;
-  do { i = Math.floor(Math.random() * MEOWS.length); } while (i === lastMeow);
+  if (audio.state !== "running") audio.resume();
+  const ready = meowBuffers.flatMap((buffer, i) => (buffer && i !== lastMeow ? [i] : []));
+  if (!ready.length) return;
+  const i = ready[Math.floor(Math.random() * ready.length)];
   lastMeow = i;
-  playMeow(MEOWS[i]);
+  const source = audio.createBufferSource();
+  source.buffer = meowBuffers[i];
+  const volume = audio.createGain();
+  volume.gain.value = MEOW_FILES[i] === "purr" ? PURR_VOLUME : MEOW_VOLUME;
+  source.connect(volume).connect(master);
+  source.start();
 }
 
 // ---------- Trash sound: paper crumple, then a lid clunk ----------
@@ -135,8 +78,7 @@ function crumpleBuffer(ac, dur) {
 }
 
 function playTrashSound() {
-  audio ??= new (window.AudioContext || window.webkitAudioContext)();
-  if (audio.state === "suspended") audio.resume();
+  if (audio.state !== "running") audio.resume();
   const t = audio.currentTime + 0.01;
 
   // 1. Crumple
@@ -149,7 +91,7 @@ function playTrashSound() {
   const cg = audio.createGain();
   cg.gain.setValueAtTime(0.7, t);
   cg.gain.linearRampToValueAtTime(0.0001, t + 0.28);
-  crumple.connect(rustle).connect(cg).connect(audio.destination);
+  crumple.connect(rustle).connect(cg).connect(master);
   crumple.start(t);
 
   // 2. Lid clunk: a low thud plus a short metal ping
@@ -161,7 +103,7 @@ function playTrashSound() {
   tg.gain.setValueAtTime(0.0001, tc);
   tg.gain.exponentialRampToValueAtTime(0.35, tc + 0.005);
   tg.gain.exponentialRampToValueAtTime(0.0001, tc + 0.18);
-  thud.connect(tg).connect(audio.destination);
+  thud.connect(tg).connect(master);
   thud.start(tc);
   thud.stop(tc + 0.2);
 
@@ -172,7 +114,7 @@ function playTrashSound() {
   pg.gain.setValueAtTime(0.0001, tc);
   pg.gain.exponentialRampToValueAtTime(0.2, tc + 0.004);
   pg.gain.exponentialRampToValueAtTime(0.0001, tc + 0.12);
-  ping.connect(pg).connect(audio.destination);
+  ping.connect(pg).connect(master);
   ping.start(tc);
   ping.stop(tc + 0.14);
 }

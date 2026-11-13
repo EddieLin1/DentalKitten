@@ -124,6 +124,36 @@ img, svg { -webkit-user-drag: none; }
 .btn:active { transform: translateY(1px); box-shadow: 0 2px 0 var(--green-dark); }
 .btn:focus-visible { outline: 3px solid var(--title-green); outline-offset: 3px; }
 
+/* Plan button with the small mute button beside it. The mute button hangs off
+   Plan's right edge, so Plan itself stays centred on the page. */
+.menu { position: relative; }
+.mute-btn {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 12px);
+  translate: 0 -50%;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 3px 0 var(--green-dark);
+  color: var(--ink);
+  cursor: pointer;
+  transition: transform .15s ease, background .15s ease;
+}
+.mute-btn svg { width: 22px; height: 22px; }
+.mute-btn:hover  { background: #82bd7c; transform: translateY(-2px); }
+.mute-btn:active { transform: translateY(1px); }
+.mute-btn:focus-visible { outline: 3px solid var(--title-green); outline-offset: 3px; }
+.mute-btn__x { display: none; }
+.mute-btn[aria-pressed="true"] { background: #d5dcd3; box-shadow: 0 3px 0 #b5bfb2; color: #6f746d; }
+.mute-btn[aria-pressed="true"] .mute-btn__waves { display: none; }
+.mute-btn[aria-pressed="true"] .mute-btn__x { display: block; }
+
 /* ---------- Plan table (revealed in place) ---------- */
 .plan-wrap {
   display: grid;
@@ -140,6 +170,67 @@ img, svg { -webkit-user-drag: none; }
 }
 .is-planning .plan-wrap  { grid-template-rows: 1fr; margin: 0; }
 .is-planning .plan-inner { opacity: 1; transform: none; transition-delay: .35s; }
+
+/* "Today's date is: …" above the table, left, over the Kittens column.
+   The label is black; the date (and "Plan" in the heading) get today's random pastel from JS. */
+.today-colour { color: var(--today-colour, var(--title-green)); }
+.today {
+  margin: 0 0 8px 6px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--ink);
+  text-align: left;
+  user-select: none;
+}
+
+/* Random cat from cataas.com, with the "cat." button underneath */
+/* Floats above the table (outside the page flow, so it never pushes anything),
+   centred in the empty space right of the 150px badge, and fades in with the table.
+   Its "cat." button lives in the table header above Dentist/Insurance. */
+.plan-wrap { position: relative; }
+.cat-pic {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: calc(25% - 37.5px);    /* halfway between the badge and the table's right edge */
+  translate: 50% 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .4s ease, visibility 0s .4s;
+}
+.is-planning .cat-pic.has-cat {   /* hidden until "cat." is pressed for the first time */
+  opacity: 1;
+  visibility: visible;
+  transition: opacity .4s ease .35s, visibility 0s .35s;
+}
+.cat-pic__frame {
+  display: grid;
+  place-items: center;
+  width: 260px;
+  height: 260px;
+  overflow: hidden;
+  border: 3px solid var(--circle-fill);
+  border-radius: 18px;
+  background: var(--card);
+}
+.cat-pic__frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;            /* fill the square whatever shape the cat photo is */
+}
+.cat-pic__msg {
+  padding: 0 12px;
+  color: #7f927b;
+  font-size: .85rem;
+  font-weight: 600;
+  text-align: center;
+  user-select: none;
+}
+.btn--small { min-width: 0; padding: 6px 22px; font-size: 1rem; }
+.btn:disabled { opacity: .6; cursor: progress; transform: none; }
 
 .plan-scroll {
   overflow-x: auto;
@@ -321,6 +412,19 @@ tr:not(.is-expanded) .cell--date .date { height: 0; padding: 0; border-width: 0;
   transition: color .2s ease;
 }
 .has-date .due { color: #6f746d; }
+.due { white-space: nowrap; }
+.due.is-due { color: #d9534f; }   /* due today or overdue */
+/* Last Visit has no DUE; when minimized it shows the entered date instead */
+.date-mini {
+  font-weight: 600;
+  letter-spacing: .05em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  overflow: hidden;
+  user-select: none;
+  transition: opacity .3s ease .2s, visibility 0s .2s;
+}
+.is-expanded .date-mini { height: 0; opacity: 0; visibility: hidden; transition: none; }
 .date {
   font-weight: 600;
   letter-spacing: .05em;
@@ -376,6 +480,39 @@ tr:not(.is-expanded) .cell--date .date { height: 0; padding: 0; border-width: 0;
 }
 /* When minimized, take up no space (it's hidden anyway) so the small row doesn't overflow */
 tr:not(.is-expanded) .status { height: 0; overflow: hidden; }
+/* Minimized: just "Insurance" with a green check (on) or red cross (off) */
+.cell--status { flex-direction: column; justify-content: center; }
+.status-mini {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .9rem;
+  font-weight: 700;
+  color: var(--title-green);
+  overflow: hidden;             /* clip instantly when it collapses, instead of drifting up while fading */
+  user-select: none;
+  transition: opacity .3s ease .2s, visibility 0s .2s;
+}
+.ins-mark {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: .75rem;
+  font-weight: 700;
+}
+.ins-mark--yes { background: #5cb85c; }
+.ins-mark--no  { background: #e05a5a; }
+.cell--status:has([data-field="insurance"]:checked)      .ins-mark--no,
+.cell--status:not(:has([data-field="insurance"]:checked)) .ins-mark--yes { display: none; }
+.is-expanded .status-mini {
+  height: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .2s ease, visibility 0s .2s;
+}
 .status__title {
   margin: 0;
   font-size: 1rem;            /* slightly bigger + bold */
@@ -410,12 +547,14 @@ tr:not(.is-expanded) .os { height: 0; overflow: hidden; }
   justify-content: center;
   gap: 5px;
 }
-/* Minimized row: picked treatments as small circles (FI, CR, EX…) */
+/* Minimized row: picked treatments as full-name pills if they all fit,
+   otherwise small circles (FI, CR, EX…). Each keeps its treatment's colour (--tc). */
 .cell--os { flex-direction: column; justify-content: center; }
 .os-mini {
   display: flex;
   justify-content: center;
   gap: 3px;
+  width: 172px;                 /* fixed, so JS can tell whether the full names fit */
   overflow: hidden;
   user-select: none;
   transition: opacity .3s ease .2s, visibility 0s .2s;
@@ -423,15 +562,18 @@ tr:not(.is-expanded) .os { height: 0; overflow: hidden; }
 .os-mini span {
   display: grid;
   place-items: center;
-  width: 22px;
+  flex-shrink: 0;
   height: 22px;
-  border-radius: 50%;
-  background: var(--green);
-  box-shadow: inset 0 0 0 2px var(--green-dark);
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--tc);
+  box-shadow: inset 0 0 0 2px var(--tc-dark);
   color: var(--ink);
   font-size: .62rem;
   font-weight: 700;
+  letter-spacing: .03em;
 }
+.os-mini.is-short span { width: 22px; padding: 0; letter-spacing: 0; }
 /* Expanded: the full chips show instead, so the circles fade out and take no space */
 .is-expanded .os-mini {
   height: 0;
@@ -451,7 +593,7 @@ tr:not(.is-expanded) .os { height: 0; overflow: hidden; }
 .chip span {
   display: block;
   padding: 3px 9px;
-  border: 2px solid #d5dcd3;
+  border: 2px solid var(--tc);
   border-radius: 999px;
   background: #fff;
   color: #5a5a5a;
@@ -460,10 +602,10 @@ tr:not(.is-expanded) .os { height: 0; overflow: hidden; }
   letter-spacing: .03em;
   transition: background .15s ease, border-color .15s ease, color .15s ease;
 }
-.chip:hover span { border-color: var(--green); }
+.chip:hover span { border-color: var(--tc-dark); }
 .chip__box:checked + span {
-  border-color: var(--green-dark);
-  background: var(--green);
+  border-color: var(--tc-dark);
+  background: var(--tc);
   color: var(--ink);
 }
 .chip__box:focus-visible + span { outline: 3px solid var(--title-green); outline-offset: 1px; }
