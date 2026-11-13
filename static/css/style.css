@@ -401,6 +401,17 @@ img, svg { -webkit-user-drag: none; }
 }
 /* Minimized: the date takes no space, so DUE sits alone in the middle */
 tr:not(.is-expanded) .cell--date .date { height: 0; padding: 0; border-width: 0; overflow: hidden; }
+/* Expanded: how long ago each date was ("5M" / "5M+" / "<1M"), just above it */
+.since {
+  min-height: 1.1em;            /* keeps the date from shifting when it's blank */
+  color: var(--title-green);
+  font-size: .95rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  white-space: nowrap;
+  user-select: none;
+}
+tr:not(.is-expanded) .since { height: 0; min-height: 0; overflow: hidden; }
 
 /* DUE under the date: faint until a date is entered, then darker. Shown in both states. */
 .due {
@@ -435,12 +446,12 @@ tr:not(.is-expanded) .cell--date .date { height: 0; padding: 0; border-width: 0;
   user-select: none;
 }
 /* Dates and trash hide while the row is minimized, and fade in once it has expanded */
-.date, .date-input, .trash, .status, .os {
+.date, .date-input, .since, .trash, .status, .os {
   opacity: 0;
   visibility: hidden;
   transition: opacity .2s ease, visibility 0s .2s;
 }
-.is-expanded .date, .is-expanded .date-input, .is-expanded .trash, .is-expanded .status, .is-expanded .os {
+.is-expanded .date, .is-expanded .date-input, .is-expanded .since, .is-expanded .trash, .is-expanded .status, .is-expanded .os {
   opacity: 1;
   visibility: visible;
   transition: opacity .3s ease .2s, visibility 0s .2s;

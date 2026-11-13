@@ -139,6 +139,7 @@ function createRow({ kitten, sleep, delay, expanded = false, dates = [], notes =
       </div>
     </div></td>
     ${Array.from({ length: dateColumns }, (_, i) => `<td><div class="cell cell--date" data-col="${i}">
+      <span class="since"></span>
       <span class="date" tabindex="0" title="Click to edit"></span>
       ${i > 0 ? '<span class="due">DUE</span>' : '<span class="date-mini" aria-hidden="true"></span>'}
     </div></td>`).join("")}
@@ -309,6 +310,8 @@ function renderDate(el) {
   if (mini) mini.textContent = value;
   const due = el.closest(".cell")?.querySelector(".due");
   if (due) renderDue(due, value);
+  const since = el.closest(".cell")?.querySelector(".since");
+  if (since) since.textContent = monthsSince(parseDate(value));
   // value only ever holds digits and slashes, so this is safe
   el.innerHTML = (value || "MM/DD/YY").split("/").join('<span class="slash">/</span>');
 }
@@ -335,6 +338,19 @@ function addMonths(date, months) {
 function startOfToday() {
   const now = new Date();
   return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+}
+
+// How long ago a date was: "5M" if exactly 5 months to the day, "5M+" if further back than that
+// (but not yet 6 months), "<1M" under a month. Blank with no date, or a date in the future.
+function monthsSince(date) {
+  const today = startOfToday();
+  if (!date || date > today) return "";
+  if (date.getTime() === today.getTime()) return "Today";
+  let months = (today.getFullYear() - date.getFullYear()) * 12 + today.getMonth() - date.getMonth();
+  if (addMonths(date, months) > today) months--;
+  if (months === 0) return "<1M";
+  const exact = addMonths(date, months).getTime() === today.getTime();
+  return `${months}M${exact ? "" : "+"}`;
 }
 
 // DUE label: faint with no date; "DUE <date>" once there is one; red once that day has come
