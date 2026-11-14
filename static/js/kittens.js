@@ -301,6 +301,15 @@ tbody.addEventListener("dblclick", (e) => {
 tbody.addEventListener("focusout", (e) => {
   if (e.target.classList.contains("notes")) e.target.readOnly = true;
 });
+// iPad/iPhone: a single tap edits. iOS only shows the keyboard when the tap itself focuses an
+// editable field, so unlock on touch-down, before Safari focuses it (double-tap doesn't work there)
+tbody.addEventListener("pointerdown", (e) => {
+  if (e.pointerType === "touch" && e.target.classList.contains("notes")) e.target.readOnly = false;
+});
+// ...and lock it again if that touch turned into a scroll instead of a tap
+tbody.addEventListener("pointercancel", (e) => {
+  if (e.target.classList.contains("notes") && document.activeElement !== e.target) e.target.readOnly = true;
+});
 
 // Keyboard: Enter opens a date or the notes for editing, Escape finishes notes
 tbody.addEventListener("keydown", (e) => {
