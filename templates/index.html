@@ -1,9 +1,11 @@
 {% extends "base.html" %}
 
 {% block content %}
+<!-- Logo + heading. On a notes page they sit side by side: logo left, page title right -->
+<header class="hero" id="hero">
 <h1 class="welcome" id="heading">Welcome!</h1>
 
-<div class="badge">
+<div class="badge" id="badge">
   <span class="sparkle sparkle--one" aria-hidden="true">✦</span>
   <span class="sparkle sparkle--two" aria-hidden="true">✧</span>
   <span class="sparkle sparkle--three" aria-hidden="true">✦</span>
@@ -14,6 +16,7 @@
 
   <p class="badge__title">Dental Kitten</p>
 </div>
+</header>
 
 <div class="plan-wrap" id="plan">
   <div class="cat-pic">
@@ -63,6 +66,9 @@
   </div>
 </div>
 
+<!-- Notes pages: filled in by notes.js once the lock is opened -->
+<div class="notes-pages" id="notes-pages"></div>
+
 <div class="menu">
   <button class="btn" id="plan-toggle" type="button" aria-expanded="false" aria-controls="plan">Plan</button>
   <button class="mute-btn" id="mute-toggle" type="button" aria-pressed="false" aria-label="Mute sounds" title="Mute sounds">
@@ -75,6 +81,29 @@
   </button>
 </div>
 
+<!-- Bottom-left (planning only): lock, password box, then the page buttons once unlocked -->
+<nav class="notes-nav" id="notes-nav" aria-label="Notes pages">
+  <button class="lock-btn" id="lock-btn" type="button" aria-label="Unlock notes" title="Unlock notes">
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"
+         stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+      <path class="lock-btn__closed" d="M7.5 11V7.5a4.5 4.5 0 0 1 9 0V11"/>
+      <path class="lock-btn__open" d="M7.5 11V7.5a4.5 4.5 0 0 1 8.7-1.6"/>
+      <rect x="4.5" y="11" width="15" height="10" rx="2.5" fill="currentColor"/>
+    </svg>
+  </button>
+  <input class="lock-input" id="lock-input" type="password" placeholder="Password" aria-label="Notes password"
+         autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="go" tabindex="-1">
+  <div class="page-btns" id="page-btns" inert>
+    <button class="page-btn" type="button" data-page="plan" aria-label="Planning page" title="Planning page">
+      <img src="{{ url_for('static', filename='img/dental_cat.svg') }}" alt="">
+    </button>
+    <button class="page-btn" type="button" data-page="ohi" title="Oral hygiene instructions">1</button>
+    <button class="page-btn" type="button" data-page="templates" title="Hygiene note templates">2</button>
+    <button class="page-btn" type="button" data-page="injections" title="Injection notes">3</button>
+  </div>
+</nav>
+<div class="copy-toast" id="copy-toast" role="status" aria-live="polite"></div>
+
 <script>
   const toggle = document.getElementById("plan-toggle");
   const heading = document.getElementById("heading");
@@ -82,6 +111,7 @@
   toggle.addEventListener("click", () => {
     playRandomMeow();
     const open = document.body.classList.toggle("is-planning");
+    if (!open) showPage("plan", false);   // leaving from a notes page: back to the table for next time
     toggle.setAttribute("aria-expanded", open);
     toggle.textContent = open ? "Back" : "Plan";
 
@@ -96,6 +126,7 @@
 </script>
 <script src="{{ url_for('static', filename='js/sounds.js') }}"></script>
 <script src="{{ url_for('static', filename='js/kittens.js') }}"></script>
+<script src="{{ url_for('static', filename='js/notes.js') }}"></script>
 <script>
   // Mute button beside Plan: silences every sound, remembered between visits
   const muteBtn = document.getElementById("mute-toggle");

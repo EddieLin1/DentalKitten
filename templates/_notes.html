@@ -1,0 +1,110 @@
+{# The locked notes pages. Only sent by POST /notes after the right password; notes.js drops it
+   into #notes-pages and shows one page at a time. Rows with data-copy copy that text when tapped. #}
+{% macro copy_icon() %}<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"
+  stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/>
+  <path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>{% endmacro %}
+
+<section class="note-page" data-page="ohi" data-title="Oral Hygiene Instructions" hidden>
+  <p class="note-hint">Tap a row to copy its instructions.</p>
+  <div class="note-card">
+    <table class="note-table note-table--ohi">
+      <thead><tr><th>Topic</th><th>Instructions</th><th class="copy-col"><span class="visually-hidden">Copy</span></th></tr></thead>
+      <tbody>
+        {% for topic, text in ohi %}
+        <tr class="copy-row" data-copy="{{ text }}" tabindex="0">
+          <th scope="row">{{ topic }}</th>
+          <td>{{ text }}</td>
+          <td class="copy-col">{{ copy_icon() }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="note-page" data-page="templates" data-title="Hygiene Note Templates" hidden>
+  <p class="note-hint">“Copy note” copies the whole template.</p>
+  <div class="templates">
+    {% for t in templates %}
+    <article class="note-card template">
+      <header class="template__head">
+        <div>
+          <p class="template__group">{{ t.group }}</p>
+          <h2 class="template__name">{{ t.name }}</h2>
+        </div>
+        <button class="copy-all" type="button" data-copy="{{ t.text }}">{{ copy_icon() }} Copy note</button>
+      </header>
+      <table class="note-table note-table--template">
+        <tbody>
+          {% for row in t.rows %}
+          <tr class="{% if row.gap %}is-gap{% endif %}{% if row.optional %} is-optional{% endif %}">
+            {% if row.label %}
+            <th scope="row">{{ row.label }}</th><td>{{ row.value }}</td>
+            {% else %}
+            <td colspan="2">{{ row.value }}</td>
+            {% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="note-page" data-page="injections" data-title="Injection Notes" hidden>
+  {% for section in injections %}
+  {% if section.blocks %}
+  <h2 class="note-heading">{{ section.title }}</h2>
+  <div class="note-card note-scroll">
+    <table class="note-table note-table--injections">
+      <thead>
+        <tr><th>Injection</th><th>Nerves (N)</th><th>Area anesthetized (A)</th><th>Landmarks (L)</th><th>Needle · depth · volume (A)</th></tr>
+      </thead>
+      <tbody>
+        {% for b in section.blocks %}
+        <tr>
+          <th scope="row">{{ b.name }}</th>
+          <td>{{ b.nerve|join("<br>"|safe) }}</td>
+          <td>{% if b.area|length > 1 %}<ul>{% for line in b.area %}<li>{{ line }}</li>{% endfor %}</ul>{% else %}{{ b.area|join }}{% endif %}</td>
+          <td>{{ b.landmarks|join("<br>"|safe) }}</td>
+          <td>
+            {{ b.needle|join("<br>"|safe) }}
+            {% for note in b.notes %}
+            <span class="inj-note{% if note.isupper() %} inj-note--alert{% endif %}">{{ note }}</span>
+            {% endfor %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+  {% if section.drugs %}
+  <h2 class="note-heading">{{ section.title }}</h2>
+  <div class="note-card note-scroll">
+    <table class="note-table note-table--drugs">
+      <thead>
+        <tr><th>Anesthetic</th><th>Drug</th><th>Relative max dose</th><th>Absolute max dose</th><th>Duration</th></tr>
+      </thead>
+      <tbody>
+        {% for d in section.drugs %}
+        <tr>
+          <th scope="row">{{ d.name }}</th>
+          <td>{{ d.formulation }}</td>
+          <td>{{ d.relative }}</td>
+          <td>{{ d.absolute }}</td>
+          <td>{{ d.duration }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+  {% endfor %}
+  {% if anes_img %}
+  <figure class="note-card note-figure">
+    <img src="{{ anes_img }}" alt="Table: expected duration of action (minutes) of local anesthetics, for maxillary infiltration and inferior alveolar block">
+  </figure>
+  {% endif %}
+</section>
